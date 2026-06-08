@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "atlcoup",
+    "capx": "capxnet",
+    "atlas": "atlcoup"
+  },
+  "targets": {},
+  "etags": {}
+}
