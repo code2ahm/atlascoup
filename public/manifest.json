@@ -1,8 +1,9 @@
 {
-  "name": "Atlas Coup — Track Habits, Goals & Tasks",
+  "name": "Atlas Coup - Track Habits, Goals & Tasks",
   "short_name": "Atlas Coup",
-  "description": "Build better habits, track goals, manage tasks, and journal your journey — all in one place.",
-  "start_url": "/",
+  "description": "Build better habits, track goals, manage tasks, and journal your journey - all in one place.",
+  "start_url": "/tracker",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#050816",
   "theme_color": "#4facfe",
