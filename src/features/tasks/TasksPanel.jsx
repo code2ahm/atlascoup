@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Circle, CheckCircle2, ChevronLeft, ChevronRight, ListChecks, Clock, Play, Pause, RotateCcw, X } from 'lucide-react';
+import { Plus, Trash2, Circle, CheckCircle2, ChevronLeft, ChevronRight, ListChecks, Clock, Play, Pause, RotateCcw, Repeat, X } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useTasksStore from '../../store/tasksStore';
 import { formatDateKey } from '../../lib/utils';
@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { LoadingSkeleton } from '../../components/ui/LoadingSpinner';
 
 function TaskTimerRing({ task, onClose }) {
   const totalSecs = (task.timeMin || 25) * 60;
@@ -94,6 +94,7 @@ function TasksPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskTime, setNewTaskTime] = useState(25);
+  const [newTaskRepeat, setNewTaskRepeat] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -115,9 +116,10 @@ function TasksPanel() {
     if (!newTaskName.trim()) return;
     setAdding(true);
     try {
-      await addTask(user.uid, { name: newTaskName.trim(), timeMin: newTaskTime }, currentDate);
+      await addTask(user.uid, { name: newTaskName.trim(), timeMin: newTaskTime, repeatDaily: newTaskRepeat }, currentDate);
       setNewTaskName('');
       setNewTaskTime(25);
+      setNewTaskRepeat(false);
       setShowAddModal(false);
       toast.success('Task added!');
     } catch { toast.error('Failed to add task'); }
@@ -139,24 +141,23 @@ function TasksPanel() {
     <div className="grid lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button onClick={handlePrevDay} disabled={isToday}
               className={`p-2 rounded-lg transition-colors ${isToday ? 'text-gray-700 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-surface-700'}`}>
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
-            <button onClick={handleToday} className={`text-lg font-semibold transition-colors ${isToday ? 'text-primary-400' : 'text-white hover:text-primary-400'}`}>
+            <button onClick={handleToday} className={`text-sm font-semibold transition-colors ${isToday ? 'text-primary-400' : 'text-gray-300 hover:text-primary-400'}`}>
               {dateStr}
             </button>
             <button onClick={handleNextDay} className="p-2 rounded-lg hover:bg-surface-700 text-gray-400 hover:text-white transition-colors">
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4" /> Add Task
           </Button>
         </div>
-
 
         {tasks.length > 0 && (
           <div className="space-y-2">
@@ -173,7 +174,26 @@ function TasksPanel() {
 
 
         {loading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner /></div>
+          <div className="space-y-3 py-4">
+            <div className="space-y-2">
+              <LoadingSkeleton className="h-3 w-full max-w-[200px]" />
+              <LoadingSkeleton className="h-1 w-full rounded-full" />
+            </div>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 bg-surface-800/50 rounded-xl px-4 py-3 border border-surface-700/30">
+                <LoadingSkeleton className="h-5 w-5 rounded-full" />
+                <div className="flex-1">
+                  <LoadingSkeleton className="h-4 w-3/4" />
+                </div>
+                <LoadingSkeleton className="h-3.5 w-8" />
+                <div className="flex gap-1">
+                  <LoadingSkeleton className="h-7 w-7 rounded" />
+                  <LoadingSkeleton className="h-7 w-7 rounded" />
+                  <LoadingSkeleton className="h-7 w-7 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : tasks.length === 0 ? (
           <div className="text-center py-12">
             <ListChecks className="h-12 w-12 text-gray-600 mx-auto mb-3" />
@@ -204,7 +224,10 @@ function TasksPanel() {
                       onClick={e => e.stopPropagation()} />
                   ) : (
                     <>
-                      <p className="text-sm text-gray-200 truncate">{task.name}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {task.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
+                        <p className="text-sm text-gray-200 truncate">{task.name}</p>
+                      </div>
                       {task.timeMin && <span className="text-xs text-gray-500 tabular-nums shrink-0">{task.timeMin}m</span>}
                     </>
                   )}
@@ -246,6 +269,17 @@ function TasksPanel() {
 
 
       <div className="space-y-6">
+        {loading ? (
+          <div className="border border-surface-700/30 rounded-xl p-5 space-y-4">
+            <LoadingSkeleton className="h-4 w-28" />
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <LoadingSkeleton className="h-3 w-20" />
+                <LoadingSkeleton className="h-4 w-10" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <Card>
           <CardHeader><CardTitle className="text-sm">Today's Summary</CardTitle></CardHeader>
           <CardContent className="space-y-3 text-sm">
@@ -269,19 +303,42 @@ function TasksPanel() {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
 
 
-      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Task">
+      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Task" size="sm">
         <form onSubmit={e => { e.preventDefault(); handleAddTask(); }} className="space-y-4">
           <Input label="Task Name" placeholder="What do you need to do?" value={newTaskName} onChange={e => setNewTaskName(e.target.value)} autoFocus />
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-300">Est. Time (minutes)</label>
-            <input type="number" min={1} max={180} value={newTaskTime}
-              onChange={e => setNewTaskTime(Number(e.target.value))}
-              className="w-full rounded-lg border border-surface-600 bg-surface-900/50 px-3 py-2.5 text-sm text-gray-100 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50" />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-300">Est. Time</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[15, 20, 30, 45, 60, 120].map(m => (
+                <button key={m} type="button" onClick={() => setNewTaskTime(m)}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${newTaskTime === m ? 'bg-primary-500/20 text-primary-400 border-primary-500/30' : 'text-gray-400 border-surface-600 hover:border-surface-500 hover:text-gray-200'}`}>
+                  {m >= 60 ? `${m / 60}h` : `${m}m`}
+                </button>
+              ))}
+              <input type="text" inputMode="numeric" value={newTaskTime || ''}
+                onChange={e => { const v = parseInt(e.target.value) || 0; if (v >= 1 && v <= 999) setNewTaskTime(v); }}
+                className="w-14 rounded-lg border border-surface-600 bg-surface-900/50 px-1.5 py-1.5 text-xs text-gray-100 outline-none focus:border-primary-500 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="?" />
+            </div>
           </div>
-          <div className="flex justify-end gap-3">
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div className={`relative w-9 h-5 rounded-full transition-colors ${newTaskRepeat ? 'bg-primary-500' : 'bg-surface-700'}`}>
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${newTaskRepeat ? 'translate-x-4' : ''}`} />
+            </div>
+            <input type="checkbox" checked={newTaskRepeat} onChange={e => setNewTaskRepeat(e.target.checked)} className="sr-only" />
+            <div className="flex items-center gap-1.5">
+              <Repeat className="h-3.5 w-3.5 text-gray-500" />
+              <span className="text-sm text-gray-300">Repeat daily</span>
+            </div>
+          </label>
+
+          <div className="flex justify-end gap-3 pt-1">
             <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
             <Button type="submit" loading={adding} disabled={!newTaskName.trim()}>Add Task</Button>
           </div>
