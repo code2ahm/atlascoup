@@ -16,6 +16,10 @@ import {
   Clock,
   Award,
   Sparkles,
+  Smile,
+  Meh,
+  Frown,
+  Angry,
 } from "lucide-react";
 import useAuthStore from "../../store/authStore";
 import useHabitsStore from "../../store/habitsStore";
@@ -44,6 +48,44 @@ const fadeIn = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.5 } },
 };
+
+const moods = [
+  {
+    value: "amazing",
+    label: "Amazing",
+    icon: Sparkles,
+    color: "text-yellow-400",
+    fill: "bg-yellow-500",
+  },
+  {
+    value: "good",
+    label: "Good",
+    icon: Smile,
+    color: "text-green-400",
+    fill: "bg-green-500",
+  },
+  {
+    value: "neutral",
+    label: "Okay",
+    icon: Meh,
+    color: "text-blue-400",
+    fill: "bg-blue-500",
+  },
+  {
+    value: "bad",
+    label: "Bad",
+    icon: Frown,
+    color: "text-orange-400",
+    fill: "bg-orange-500",
+  },
+  {
+    value: "awful",
+    label: "Awful",
+    icon: Angry,
+    color: "text-red-400",
+    fill: "bg-red-500",
+  },
+];
 
 function CountUp({ to, duration = 800, suffix = "" }) {
   const [val, setVal] = useState(0);
@@ -126,9 +168,9 @@ function ArcProgress({
           }}
         />
       </svg>
-      <div className="relative flex flex-col items-center z-10">
+      <div className="relative flex flex-col items-center justify-center z-10">
         {label !== undefined && (
-          <span className="text-2xl font-bold text-white leading-none">
+          <span className="font-bold text-white leading-none flex items-center justify-center">
             {label}
           </span>
         )}
@@ -241,12 +283,15 @@ function StreakRow({ habit, streak, max, index }) {
   const colors = ["#4facfe", "#22c55e", "#f97316", "#a855f7", "#eab308"];
   const color = colors[index % colors.length];
   return (
-    <motion.div variants={fadeUp} className="group flex items-center gap-3">
+    <motion.div
+      variants={fadeUp}
+      className="group flex items-center gap-3 min-w-0"
+    >
       <div
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ background: color }}
       />
-      <span className="text-xs text-gray-400 truncate flex-1 group-hover:text-gray-200 transition-colors">
+      <span className="text-xs text-gray-400 break-words flex-1 min-w-0 group-hover:text-gray-200 transition-colors">
         {habit}
       </span>
       <ProgressBar
@@ -266,7 +311,7 @@ function TaskItem({ task, index }) {
   return (
     <motion.div
       variants={fadeUp}
-      className="flex items-start gap-2.5 py-1.5 group"
+      className="flex items-start gap-2.5 py-1.5 group min-w-0"
     >
       <div
         className={`mt-0.5 w-3.5 h-3.5 rounded-full border shrink-0 flex items-center justify-center transition-all ${
@@ -278,7 +323,7 @@ function TaskItem({ task, index }) {
         {task.done && <div className="w-1.5 h-1.5 rounded-full bg-green-400" />}
       </div>
       <span
-        className={`text-xs leading-relaxed ${task.done ? "line-through text-gray-600" : "text-gray-300"}`}
+        className={`text-xs leading-relaxed break-words min-w-0 flex-1 ${task.done ? "line-through text-gray-600" : "text-gray-300"}`}
       >
         {task.title ?? task.text ?? task.name ?? "Task"}
       </span>
@@ -297,7 +342,7 @@ function GoalCard({ goal, index }) {
   return (
     <motion.div
       variants={fadeUp}
-      className="flex items-center gap-3 py-1.5 group"
+      className="flex items-center gap-3 py-1.5 group min-w-0"
     >
       <ArcProgress
         value={pct}
@@ -307,7 +352,7 @@ function GoalCard({ goal, index }) {
         label={<span className="text-[9px] font-bold text-white">{pct}%</span>}
       />
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-300 truncate group-hover:text-white transition-colors">
+        <p className="text-xs text-gray-300 break-words group-hover:text-white transition-colors">
           {goal.title ?? goal.name ?? "Goal"}
         </p>
         <p className="text-[10px] text-gray-600">
@@ -350,7 +395,7 @@ function DateBanner({ user }) {
   );
 }
 
-function Dashboard() {
+function Dashboard({ onTabChange }) {
   const { user } = useAuthStore();
   const { habits, fetchHabits } = useHabitsStore();
   const { tasks, fetchTasks } = useTasksStore();
@@ -418,6 +463,20 @@ function Dashboard() {
     const d = new Date(e.createdAt?.toDate?.() ?? e.createdAt);
     return d >= thirtyDaysAgo;
   }).length;
+  const recentEntries = useMemo(
+    () =>
+      entries
+        .filter((e) => {
+          const d = new Date(e.createdAt?.toDate?.() ?? e.createdAt);
+          return d >= thirtyDaysAgo;
+        })
+        .sort((a, b) => {
+          const da = new Date(a.createdAt?.toDate?.() ?? a.createdAt);
+          const db = new Date(b.createdAt?.toDate?.() ?? b.createdAt);
+          return db - da;
+        }),
+    [entries, thirtyDaysAgo],
+  );
 
   const score = healthScore?.overall ?? 0;
   const scoreColor =
@@ -482,7 +541,7 @@ function Dashboard() {
   if (!loaded) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
           {Array.from({ length: 4 }, (_, i) => (
             <LoadingSkeleton key={i} className="h-28 rounded-xl" />
           ))}
@@ -506,151 +565,242 @@ function Dashboard() {
 
       <motion.div
         variants={fadeIn}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+        className="grid grid-cols-2 lg:grid-cols-6 gap-3 items-stretch"
       >
         <motion.div
           variants={fadeUp}
-          className="col-span-2 relative overflow-hidden rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-3 sm:gap-5 items-center sm:items-center"
+          className="dash-score col-span-2 lg:col-span-4 relative overflow-hidden rounded-2xl p-5 flex gap-5"
           style={{
             background:
-              "linear-gradient(135deg, rgba(79,172,254,0.08) 0%, rgba(0,242,254,0.04) 100%)",
-            border: "1px solid rgba(79,172,254,0.15)",
+              "linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(13,17,23,0.95) 100%)",
+            border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <div
-            className="absolute -right-8 -top-8 w-40 h-40 rounded-full pointer-events-none"
+            className="absolute top-0 left-0 right-0 pointer-events-none"
             style={{
-              background: `radial-gradient(circle, ${scoreColor}18 0%, transparent 70%)`,
+              height: "60px",
+              background:
+                "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(30, 80, 160, 0.32) 0%, transparent 100%)",
             }}
           />
-
-          <ArcProgress
-            value={score}
-            size={86}
-            stroke={7}
-            color={scoreColor}
-            label={<CountUp to={score} />}
-            sublabel="/100"
-          />
-
-          <div className="flex-1 min-w-0 w-full">
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-0.5">
+          <div
+            className="flex flex-col items-center justify-center gap-1 shrink-0"
+            style={{ minWidth: 130 }}
+          >
+            <p className="text-[10px] uppercase tracking-widest text-gray-500">
               Health Score
             </p>
-            <p
-              className="text-xs font-medium mb-3"
-              style={{ color: scoreColor }}
-            >
-              {scoreGrade}
+            <ArcProgress
+              value={score}
+              size={90}
+              stroke={7}
+              color={scoreColor}
+              label={
+                <span className="text-xl font-bold">
+                  <CountUp to={score} />
+                </span>
+              }
+              sublabel="/100"
+            />
+            <p className="text-[10px] text-gray-600 text-center leading-snug">
+              30-day consistency rating
             </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <ScorePill
-                label="Completion"
-                value={completionRate}
-                display={`${completionRate}%`}
-                color="blue"
-              />
-              <ScorePill
-                label="Best Streak"
-                value={Math.min((aggregateStreak / 30) * 100, 100)}
-                display={`${aggregateStreak}d`}
-                color="orange"
-              />
-              <ScorePill
-                label="Active Days"
-                value={Math.round((activeDays / 30) * 100)}
-                display={`${activeDays}/30`}
-                color="green"
-              />
-              <ScorePill
-                label="Momentum"
-                value={momentum.value}
-                display={momentum.label}
-                color="purple"
-              />
-            </div>
+          </div>
+
+          <div className="flex-1 lg:grid lg:grid-cols-2 lg:gap-2 lg:content-center flex flex-col justify-center gap-2">
+            {[
+              {
+                label: "Consistency",
+                value: `${completionRate}%`,
+                color: "#4facfe",
+                bg: "rgba(79,172,254,0.1)",
+                icon: (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#4facfe"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Streak",
+                value: `${aggregateStreak}d`,
+                color: "#f97316",
+                bg: "rgba(249,115,22,0.1)",
+                icon: (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Perfect days",
+                value: `${healthScore?.perfectDays ?? 0}`,
+                color: "#22c55e",
+                bg: "rgba(34,197,94,0.1)",
+                icon: (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#22c55e"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="4" />
+                    <line x1="12" y1="2" x2="12" y2="4" />
+                    <line x1="12" y1="20" x2="12" y2="22" />
+                    <line x1="2" y1="12" x2="4" y2="12" />
+                    <line x1="20" y1="12" x2="22" y2="12" />
+                  </svg>
+                ),
+              },
+              {
+                label: "Improvement",
+                value: `${Math.max(0, Math.round((healthScore?.improvement ?? 0) + 29))}%`,
+                color: "#a855f7",
+                bg: "rgba(168,85,247,0.1)",
+                icon: (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#a855f7"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                    <polyline points="17 6 23 6 23 12" />
+                  </svg>
+                ),
+              },
+            ].map(({ label, value, color, bg, icon }) => (
+              <div
+                key={label}
+                className="flex items-center gap-2 rounded-lg px-3 py-1.5"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                }}
+              >
+                <div
+                  className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: bg }}
+                >
+                  {icon}
+                </div>
+                <span className="text-xs text-gray-400 flex-1">{label}</span>
+                <span
+                  className="text-sm font-semibold tabular-nums"
+                  style={{ color }}
+                >
+                  {value}
+                </span>
+              </div>
+            ))}
           </div>
         </motion.div>
 
         <motion.div
           variants={fadeUp}
-          className="rounded-2xl p-4 sm:p-5 flex flex-col relative"
+          className="dash-streaks rounded-2xl p-4 sm:p-5 flex flex-col relative h-full"
           style={{
             background:
-              "linear-gradient(135deg,rgba(249,115,22,0.14),rgba(249,115,22,0.03))",
-            border: "1px solid rgba(249,115,22,0.18)",
+              "linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(13,17,23,0.95) 100%)",
+            border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
+          <div
+            className="absolute top-0 left-0 right-0 pointer-events-none"
+            style={{
+              height: "60px",
+              background:
+                "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(180, 60, 0, 0.27) 0%, transparent 100%)",
+              borderRadius: "15px",
+            }}
+          />
           {aggregateStreak > 0 && (
             <div
               className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none"
               style={{
                 background:
-                  "radial-gradient(circle,rgba(249,115,22,0.12),transparent 70%)",
+                  "radial-gradient(circle,rgba(249, 116, 22, 0),transparent 70%)",
               }}
             />
           )}
-          <div className="relative z-10">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center relative shrink-0"
-                  style={{ background: "rgba(249,115,22,0.12)" }}
-                >
-                  <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
-                  {aggregateStreak > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-                  )}
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-500 leading-none flex items-center gap-1">
-                    Active streak
-                    <span className="relative group">
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-gray-600"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                        <path d="M12 17h.01" />
-                      </svg>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-52 pointer-events-none">
-                        <div className="bg-surface-900 border border-surface-600/50 rounded-lg shadow-xl px-3 py-2 text-[9px] leading-relaxed text-gray-300">
-                          Tracks consecutive days with at least one completed
-                          habit. Streak resets after a day with no completions
-                          (This streak is different from the one in analytics
-                          tab.)
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-800" />
-                        </div>
-                      </div>
-                    </span>
+          <div className="relative z-10 flex flex-col items-center justify-center h-full text-center">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-[10px] text-gray-500 leading-none flex items-center gap-1">
+                Active streak
+                <span className="relative group">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <path d="M12 17h.01" />
+                  </svg>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-52 pointer-events-none">
+                    <div className="bg-surface-900 border border-surface-600/50 rounded-lg shadow-xl px-3 py-2 text-[9px] leading-relaxed text-gray-300">
+                      Tracks consecutive days with at least one completed
+                      habit. Streak resets after a day with no completions.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-surface-800" />
+                    </div>
                   </div>
-                  <p className="text-xl font-bold text-white leading-none mt-0.5">
-                    <CountUp to={aggregateStreak} />
-                    <span className="text-sm font-normal text-gray-500 ml-0.5">
-                      days
-                    </span>
-                  </p>
-                </div>
+                </span>
               </div>
-              {aggregateStreak >= 3 && (
+            </div>
+            <div className="flex items-center gap-3 mb-3">
+              <motion.div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center relative shrink-0"
+                animate={{ scale: [1, 1.08, 1], opacity: [1, 0.85, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" style={{ filter: "drop-shadow(0 0 6px rgba(249,115,22,0.6))" }} />
+                {aggregateStreak > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                )}
+              </motion.div>
+              {aggregateStreak > 0 && (
                 <div
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
                   style={{
                     background: "rgba(249,115,22,0.1)",
                     border: "1px solid rgba(249,115,22,0.2)",
                   }}
                 >
                   <svg
-                    width="10"
-                    height="10"
+                    width="14"
+                    height="14"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="#f97316"
@@ -660,60 +810,45 @@ function Dashboard() {
                   >
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                   </svg>
-                  <span className="text-[9px] text-orange-400 font-medium">
+                  <span className="text-sm font-bold text-orange-400 tabular-nums">
                     x{aggregateStreak}
                   </span>
                 </div>
               )}
             </div>
-            {(() => {
-              const best = [...currentStreaks].sort(
-                (a, b) => b.streak - a.streak,
-              )[0];
-              if (!best || best.streak === 0) return null;
-              return (
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ background: "#f97316" }}
-                  />
-                  <p className="text-[10px] text-gray-400 truncate">
-                    {best.habit} — {best.streak}d
-                  </p>
-                </div>
-              );
-            })()}
-            <div className="h-1 bg-surface-700/50 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-1000"
-                style={{
-                  width: `${Math.min((aggregateStreak / 30) * 100, 100)}%`,
-                  background: "linear-gradient(90deg,#fb923c,#f97316,#ef4444)",
-                }}
-              />
-            </div>
-            <p className="text-[9px] text-gray-600 mt-1">
+            <p className="text-[10px] text-gray-500 leading-relaxed">
               {aggregateStreak === 0
-                ? "No active streak"
-                : aggregateStreak < 7
-                  ? "Building momentum — keep going!"
-                  : aggregateStreak < 14
-                    ? "Strong rhythm — you're on a roll!"
-                    : "Unstoppable! This is legendary."}
+                ? "No active streak — pick a habit and start today."
+                : aggregateStreak < 3
+                  ? "Just getting started — every day counts!"
+                  : aggregateStreak < 7
+                    ? "Building momentum — you're on fire!"
+                    : aggregateStreak < 14
+                      ? "Strong rhythm — consistency is paying off."
+                      : aggregateStreak < 30
+                        ? "Unstoppable! This is legendary."
+                        : "Absolutely elite — you're in the 1%."}
             </p>
           </div>
         </motion.div>
-
         <motion.div
           variants={fadeUp}
-          className="rounded-2xl p-4 sm:p-5 flex flex-col justify-between"
+          className="dash-tasks rounded-2xl p-4 sm:p-5 flex flex-col relative overflow-hidden h-full"
           style={{
             background:
-              "linear-gradient(135deg,rgba(34,197,94,0.09),rgba(34,197,94,0.03))",
-            border: "1px solid rgba(34,197,94,0.16)",
+              "linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(13,17,23,0.95) 100%)",
+            border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <div className="flex items-center justify-between mb-3 min-w-0 gap-2">
+          <div
+            className="absolute top-0 left-0 right-0 pointer-events-none"
+            style={{
+              height: "50px",
+              background:
+                "radial-gradient(ellipse 100% 100% at 50% 0%, rgba(10, 100, 40, 0.37) 0%, transparent 100%)",
+            }}
+          />
+          <div className="flex items-center justify-between mb-3 min-w-0 gap-2 shrink-0">
             <div
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: "rgba(34,197,94,0.12)" }}
@@ -724,7 +859,7 @@ function Dashboard() {
               {taskPct}%
             </span>
           </div>
-          <div>
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
             <p className="text-xl sm:text-2xl font-bold text-white leading-none">
               <CountUp to={doneTasks.length} />
               <span className="text-sm text-gray-500 font-normal">
@@ -736,7 +871,7 @@ function Dashboard() {
               value={taskPct}
               color="#22c55e"
               height={2}
-              className="mt-2"
+              className="mt-2 w-full"
             />
           </div>
         </motion.div>
@@ -789,7 +924,14 @@ function Dashboard() {
           )}
         </motion.div>
 
-        <motion.div variants={fadeUp} className="glass-card rounded-2xl p-5">
+        <motion.div
+          variants={fadeUp}
+          className="dash-tasks rounded-2xl p-5 flex flex-col"
+          style={{
+            background: "rgba(13,17,23,0.9)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
@@ -805,7 +947,7 @@ function Dashboard() {
             </div>
           </div>
           {tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="flex flex-col items-center justify-center flex-1 py-8 text-center">
               <CheckCircle2 className="h-8 w-8 text-gray-700 mb-2" />
               <p className="text-xs text-gray-600">No tasks for today</p>
             </div>
@@ -814,7 +956,7 @@ function Dashboard() {
               variants={staggerContainer}
               initial="hidden"
               animate="show"
-              className="space-y-0 divide-y divide-white/[0.03]"
+              className="space-y-0 divide-y divide-white/[0.03] flex-1"
             >
               {pendingTasks.slice(0, 4).map((t, i) => (
                 <TaskItem key={t.id ?? i} task={t} index={i} />
@@ -895,51 +1037,57 @@ function Dashboard() {
           variants={fadeUp}
           className="lg:col-span-2 glass-card rounded-2xl p-5"
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <BookOpen className="h-3.5 w-3.5 text-blue-400" />
               <span className="text-xs font-medium text-gray-300">Journal</span>
             </div>
-            <span className="text-[10px] text-gray-600">last 30 days</span>
+            <span className="text-[10px] text-gray-500 tabular-nums">
+              {journalCount} entries till date
+            </span>
           </div>
-          <div className="flex items-end gap-4">
+          {recentEntries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <BookOpen className="h-8 w-8 text-gray-700 mb-2" />
+              <p className="text-xs text-gray-600">No journal entries yet</p>
+            </div>
+          ) : (
             <div>
-              <p className="text-3xl font-bold text-white">
-                <CountUp to={journalCount} />
-              </p>
-              <p className="text-[10px] text-gray-500 mt-1">entries written</p>
-            </div>
-            <div className="flex-1 flex items-end gap-0.5 h-10">
-              {Array.from({ length: 5 }, (_, wi) => {
-                const weekStart = new Date(today);
-                weekStart.setDate(
-                  today.getDate() - (4 - wi) * 7 - today.getDay(),
-                );
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekStart.getDate() + 6);
-                const count = entries.filter((e) => {
-                  const d = new Date(e.createdAt?.toDate?.() ?? e.createdAt);
-                  return d >= weekStart && d <= weekEnd;
-                }).length;
-                const maxW = 5;
-                const h = Math.max(4, (count / Math.max(maxW, 1)) * 36);
+              <p className="text-[10px] text-gray-500 mb-2">Latest entry:</p>
+              {(() => {
+                const entry = recentEntries[0];
+                const date = entry.createdAt?.toDate
+                  ? entry.createdAt.toDate()
+                  : new Date(entry.createdAt || entry.dateKey);
+                const mood = moods.find((m) => m.value === entry.mood);
+                const MoodIcon = mood?.icon;
                 return (
-                  <div
-                    key={wi}
-                    className="flex-1 rounded-sm transition-all"
-                    style={{
-                      height: h,
-                      background:
-                        count > 0
-                          ? "rgba(79,172,254,0.5)"
-                          : "rgba(255,255,255,0.05)",
-                      alignSelf: "flex-end",
-                    }}
-                  />
+                  <button
+                    onClick={() => onTabChange?.("journal")}
+                    className="w-full text-left bg-white/[0.03] rounded-lg p-3 border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      {MoodIcon && (
+                        <MoodIcon
+                          className={`h-3.5 w-3.5 ${mood?.color || "text-gray-500"}`}
+                        />
+                      )}
+                      <span className="text-[10px] text-gray-500">
+                        {date.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">
+                      {entry.text}
+                    </p>
+                  </button>
                 );
-              })}
+              })()}
             </div>
-          </div>
+          )}
         </motion.div>
 
         <motion.div
