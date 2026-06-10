@@ -7,9 +7,10 @@ import {
   deleteDoc,
   query,
   orderBy,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { getMonthId } from '../lib/utils';
+import { getMonthId, formatDateKey } from '../lib/utils';
 
 function getHabitsCollection(uid, monthId) {
   return collection(db, 'users', uid, 'habits', monthId, 'items');
@@ -22,14 +23,43 @@ export async function getHabits(uid, date = new Date()) {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export async function addHabit(uid, name, order = 0, date = new Date()) {
+export function subscribeHabits(uid, date, onData, onError = () => {}) {
   const monthId = getMonthId(date);
+  const q = query(getHabitsCollection(uid, monthId), orderBy('order'));
+  return onSnapshot(q, (snap) => {
+    onData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, onError);
+}
+
+export async function addHabit(uid, name, repeatDaily = false, order = 0, date = new Date()) {
+  const monthId = getMonthId(date);
+  const createdAt = formatDateKey(date);
   const ref = await addDoc(getHabitsCollection(uid, monthId), {
     name,
     days: {},
+    repeatDaily,
+    createdAt,
     order,
   });
-  return { id: ref.id, name, days: {}, order };
+  return { id: ref.id, name, days: {}, repeatDaily, createdAt, order };
+}
+
+export async function getHabitsFromMonth(uid, monthId) {
+  const q = query(getHabitsCollection(uid, monthId), orderBy('order'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function copyRepeatableHabits(uid, fromMonthId, toMonthId, today = new Date()) {
+  const habits = await getHabitsFromMonth(uid, fromMonthId);
+  const repeatable = habits.filter(h => h.repeatDaily);
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const createdAt = formatDateKey(firstOfMonth);
+  for (const habit of repeatable) {
+    const { id, days, ...rest } = habit;
+    await addDoc(getHabitsCollection(uid, toMonthId), { ...rest, days: {}, createdAt });
+  }
+  return repeatable.length;
 }
 
 export async function updateHabit(uid, habitId, data, date = new Date()) {
