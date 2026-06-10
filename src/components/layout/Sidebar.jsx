@@ -11,8 +11,8 @@ const navItems = [
   { id: 'journal', label: 'Journal', icon: BookOpen },
 ];
 
-function Sidebar({ activeTab, onTabChange, onLogout, onSettings, userName, userEmail, userPhoto }) {
-  const { theme, toggleTheme } = useThemeStore();
+function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, userName, userEmail, userPhoto }) {
+  const { theme } = useThemeStore();
   const sidebarContent = (
     <div className="flex flex-col h-full">
       <div className="p-5 border-b border-surface-700/50">
@@ -62,13 +62,22 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, userName, userE
           <Settings className="h-4 w-4" />
           <span>Settings</span>
         </button>
-        <button
-          onClick={toggleTheme}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
-        >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-        </button>
+        <div className="relative group">
+          <button
+            onClick={onToggleTheme}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+          </button>
+          {theme === 'light' && (
+            <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover:block z-50 pointer-events-none">
+              <div className="bg-surface-800 text-[11px] text-gray-200 px-2.5 py-1.5 rounded-lg border border-white/10 shadow-xl whitespace-nowrap">
+                Yes! click me, enable the dark mode
+              </div>
+            </div>
+          )}
+        </div>
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
