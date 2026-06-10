@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { ChevronRight, Settings, LogOut, Sun, Moon, Download } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 import { logout } from '../../services/auth';
@@ -27,6 +27,16 @@ function TrackerLayout() {
   const [loading, setLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLightModeConfirm, setShowLightModeConfirm] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  const handleInstall = () => {
+    if (isIOS) { setShowInstallModal(true); return; }
+    if (window.__installPrompt) { window.__installPrompt.prompt(); window.__installPrompt.userChoice.then(() => { window.__installPrompt = null; }); return; }
+    toast.error('Keep visiting the site — the install option will appear once Chrome determines the app is ready.');
+  };
 
   const handleToggleTheme = () => {
     if (theme === 'dark') {
@@ -111,6 +121,15 @@ function TrackerLayout() {
                   <Settings className="h-3.5 w-3.5" />
                   <span>Settings</span>
                 </button>
+                {!isStandalone && (
+                  <button
+                    onClick={() => { handleInstall(); setProfileOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-gray-300 hover:text-white transition-all"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Install App</span>
+                  </button>
+                )}
                 <button
                   onClick={() => { handleToggleTheme(); setProfileOpen(false); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-gray-300 hover:text-white transition-all"
@@ -137,6 +156,8 @@ function TrackerLayout() {
         onLogout={handleLogout}
         onSettings={() => setSettingsOpen(true)}
         onToggleTheme={handleToggleTheme}
+        onInstall={handleInstall}
+        showInstall={!isStandalone}
         userName={user.displayName || user.email?.split('@')[0] || ''}
         userEmail={user.email || ''}
         userPhoto={user.photoURL}
@@ -201,6 +222,40 @@ function TrackerLayout() {
                   No, I would use dark mode instead
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInstallModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowInstallModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={e => e.stopPropagation()}
+              className="glass border border-white/10 rounded-2xl p-6 sm:p-8 max-w-sm w-full text-center"
+            >
+              <Download className="w-12 h-12 mx-auto mb-4 text-[#4facfe]" />
+              <h2 className="text-lg font-bold mb-3">Install Atlas Coup</h2>
+              <div className="text-sm text-gray-400 text-left space-y-3 mb-6">
+                <p>1. Tap the <b className="text-white">Share</b> button at the bottom of Safari.</p>
+                <p>2. Scroll down and tap <b className="text-white">Add to Home Screen</b>.</p>
+                <p>3. Tap <b className="text-white">Add</b> in the top right.</p>
+              </div>
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className="w-full py-2.5 rounded-xl bg-[#4facfe]/20 hover:bg-[#4facfe]/30 text-[#4facfe] font-medium text-sm transition-all border border-[#4facfe]/20"
+              >
+                Got it
+              </button>
             </motion.div>
           </motion.div>
         )}
