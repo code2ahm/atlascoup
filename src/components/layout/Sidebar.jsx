@@ -1,4 +1,4 @@
-import { LayoutDashboard, CheckSquare, ListTodo, Target, BarChart3, BookOpen, Settings, LogOut, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, ListTodo, Target, BarChart3, BookOpen, Settings, LogOut, Sun, Moon, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import useThemeStore from '../../store/themeStore';
 
@@ -11,7 +11,7 @@ const navItems = [
   { id: 'journal', label: 'Journal', icon: BookOpen },
 ];
 
-function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, userName, userEmail, userPhoto }) {
+function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, onInstall, showInstall, userName, userEmail, userPhoto }) {
   const { theme } = useThemeStore();
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -62,6 +62,15 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, 
           <Settings className="h-4 w-4" />
           <span>Settings</span>
         </button>
+        {showInstall && (
+          <button
+            onClick={onInstall}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
+          >
+            <Download className="h-4 w-4" />
+            <span>Install App</span>
+          </button>
+        )}
         <div className="relative group">
           <button
             onClick={onToggleTheme}
