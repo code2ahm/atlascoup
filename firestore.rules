@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/{document=**} {
+      allow read: if isOwner(userId);
+
+      allow create, update: if isOwner(userId)
+        && request.resource.data.size() < 102400;
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/habits/{monthId}/items/{habit} {
+      allow create: if isOwner(userId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.keys().hasOnly(['name', 'days', 'repeatDaily', 'createdAt', 'order']);
+    }
+
+    match /users/{userId}/journal/{entry} {
+      allow create: if isOwner(userId)
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 50000
+        && request.resource.data.keys().hasOnly(['text', 'mood', 'dateKey', 'createdAt']);
+    }
+
+    match /users/{userId}/goals/{goal} {
+      allow create: if isOwner(userId)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 300;
+    }
+
+    match /users/{userId}/taskdays/{dateKey} {
+      allow create, update: if isOwner(userId)
+        && request.resource.data.tasks is list
+        && request.resource.data.tasks.size() <= 200;
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/taskTemplates/{doc} {
+      allow create, update: if isOwner(userId)
+        && request.resource.data.templates is list
+        && request.resource.data.templates.size() <= 200;
+
+      allow delete: if isOwner(userId);
+    }
+  }
+}
