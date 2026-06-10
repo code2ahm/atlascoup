@@ -2,7 +2,7 @@ import { formatDateKey } from './utils';
 
 export function calculateHealthScore(habits, startDate, endDate) {
   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  let consistencySum = 0, perfectSum = 0, streakSum = 0;
+  let consistencySum = 0, streakSum = 0;
   let firstHalfTotal = 0, firstHalfCompleted = 0;
   let secondHalfTotal = 0, secondHalfCompleted = 0;
   const midDate = new Date(startDate.getTime() + (endDate - startDate) / 2);
@@ -25,16 +25,24 @@ export function calculateHealthScore(habits, startDate, endDate) {
     }
     const ratio = totalDays > 0 ? completedDays / totalDays : 0;
     consistencySum += ratio;
-    perfectSum += ratio === 1 ? 1 : 0;
     streakSum += maxStreak;
     firstHalfTotal += Math.ceil((midDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     secondHalfTotal += Math.ceil((endDate - midDate) / (1000 * 60 * 60 * 24));
   });
 
+  // Count perfect days — days where all habits were completed
+  let perfectDays = 0;
+  let currentDate = new Date(startDate);
+  while (currentDate <= endDate) {
+    const key = formatDateKey(currentDate);
+    if (habits.every(h => h.days && h.days[key])) perfectDays++;
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
   const n = habits.length || 1;
   const consistency = Math.round((consistencySum / n) * 40);
   const streak = Math.round((streakSum / n) * 25);
-  const perfection = Math.round((perfectSum / n) * 20);
+  const perfection = Math.round((perfectDays / totalDays) * 20);
 
   const firstRate = firstHalfTotal > 0 ? firstHalfCompleted / firstHalfTotal : 0;
   const secondRate = secondHalfTotal > 0 ? secondHalfCompleted / secondHalfTotal : 0;
@@ -46,7 +54,7 @@ export function calculateHealthScore(habits, startDate, endDate) {
 
   const overall = Math.min(100, Math.max(0, consistency + streak + perfection + improvement));
 
-  return { overall, consistency, streak, perfection, improvement };
+  return { overall, consistency, streak, perfection, improvement, perfectDays };
 }
 
 export function calculateStreaks(habits, startDate, endDate) {

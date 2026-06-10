@@ -21,9 +21,9 @@ import {
   CardTitle,
 } from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { LoadingSkeleton } from "../../components/ui/LoadingSpinner";
 import { formatDateKey, getMonthId } from "../../lib/utils";
-import { collection, getDocs, query, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, documentId } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
 const scoreLabels = [
@@ -335,7 +335,7 @@ function GithubCalendar({ data, taskData }) {
             ref={svgRef}
             width={svgW}
             height={svgH}
-            style={{ display: "block" }}
+            style={{ display: "block", fontFamily: "inherit" }}
             onMouseMove={handleSvgMouseMove}
             onMouseLeave={() => setTooltip(null)}
           >
@@ -383,7 +383,7 @@ function GithubCalendar({ data, taskData }) {
               const pctLeft = tooltip.clientX / tooltip.rectW > 0.7;
               return (
                 <div
-                  className="absolute z-20 pointer-events-none rounded-xl shadow-2xl px-3 py-2.5 text-[10px] leading-relaxed backdrop-blur-md"
+                  className="cell-tooltip absolute z-20 pointer-events-none rounded-xl shadow-2xl px-3 py-2.5 text-[10px] leading-relaxed backdrop-blur-md"
                   style={{
                     left: pctLeft ? "auto" : tooltip.clientX + 10,
                     right: pctLeft
@@ -497,7 +497,7 @@ function LineChart({ habitData, taskData, days }) {
     );
 
   const W = 640,
-    H = 180,
+    H = 220,
     PL = 36,
     PR = 12,
     PT = 14,
@@ -597,7 +597,7 @@ function LineChart({ habitData, taskData, days }) {
         style={{
           width: "100%",
           aspectRatio: `${W}/${H}`,
-          minHeight: 160,
+          minHeight: 200,
           position: "relative",
         }}
       >
@@ -634,8 +634,8 @@ function LineChart({ habitData, taskData, days }) {
                 y={yScale(tick)}
                 textAnchor="end"
                 dominantBaseline="central"
-                fontSize={9}
-                fill="rgba(156,163,175,0.5)"
+                fontSize={7}
+                fill="rgba(156,163,175,0.75)"
               >
                 {tick}
               </text>
@@ -683,8 +683,8 @@ function LineChart({ habitData, taskData, days }) {
               x={xScale(i)}
               y={H - 4}
               textAnchor="middle"
-              fontSize={9}
-              fill="rgba(156,163,175,0.5)"
+              fontSize={7}
+              fill="rgba(156,163,175,0.75)"
             >
               {fmtDate(series[i].key, { month: "short", day: "numeric" })}
             </text>
@@ -716,7 +716,7 @@ function LineChart({ habitData, taskData, days }) {
 
         {tooltip && (
           <div
-            className="absolute pointer-events-none rounded-xl px-2.5 py-2 text-[10px] leading-relaxed z-10 shadow-2xl"
+            className="chart-tooltip absolute pointer-events-none rounded-xl px-2.5 py-2 text-[10px] leading-relaxed z-10 shadow-2xl"
             style={{
               left: `${(tooltip.x / W) * 100}%`,
               top: 20,
@@ -972,7 +972,7 @@ function ExportButton({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+        className="export-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
         style={{
           background: "rgba(255,255,255,0.07)",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -984,7 +984,7 @@ function ExportButton({
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 z-50 rounded-xl shadow-2xl overflow-hidden w-44"
+          className="export-dropdown absolute right-0 top-full mt-1.5 z-50 rounded-xl shadow-2xl overflow-hidden w-44"
           style={{
             background: "#0d0f1a",
             border: "1px solid rgba(255,255,255,0.1)",
@@ -1079,6 +1079,7 @@ function AnalyticsPanel() {
   const [allHabits, setAllHabits] = useState({});
   const [allTaskDays, setAllTaskDays] = useState({});
   const [goals, setGoals] = useState([]);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -1102,8 +1103,10 @@ function AnalyticsPanel() {
       habitSnaps.forEach((snap) =>
         snap.forEach((docSnap) => {
           const d = docSnap.data(),
-            daysMap = d.days ?? d.dates ?? {};
+            daysMap = d.days ?? d.dates ?? {},
+            createdAt = d.createdAt;
           Object.entries(daysMap).forEach(([date, done]) => {
+            if (createdAt && date < createdAt) return;
             if (!allHabitsFlat[date])
               allHabitsFlat[date] = { total: 0, done: 0 };
             allHabitsFlat[date].total++;
@@ -1112,21 +1115,15 @@ function AnalyticsPanel() {
         }),
       );
       setAllHabits(allHabitsFlat);
-      const allDates = new Set([
-        ...Object.keys(allHabitsFlat),
-        ...Array.from({ length: 365 }, (_, i) => {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          return dateKey(d);
-        }),
-      ]);
-      const taskSnaps = await Promise.all(
-        [...allDates].map((d) => getDoc(doc(db, "users", uid, "taskdays", d))),
+      const taskQuery = query(
+        collection(db, "users", uid, "taskdays"),
+        where(documentId(), ">=", dateKey(new Date(today.getFullYear(), today.getMonth() - 12, 1))),
+        where(documentId(), "<=", dateKey(today)),
       );
-      const tasksMap = {},
-        dateArr = [...allDates];
-      taskSnaps.forEach((snap, i) => {
-        tasksMap[dateArr[i]] = snap.exists() ? (snap.data().tasks ?? []) : [];
+      const taskSnap = await getDocs(taskQuery);
+      const tasksMap = {};
+      taskSnap.forEach((ds) => {
+        tasksMap[ds.id] = ds.data().tasks ?? [];
       });
       setAllTaskDays(tasksMap);
       const goalsSnap = await getDocs(collection(db, "users", uid, "goals"));
@@ -1202,18 +1199,37 @@ function AnalyticsPanel() {
       perfection * 0.2 +
       improvement * 0.15;
     const healthScore = Math.round(Math.max(0, Math.min(100, rawScore)));
-    const tasksCompleted = Object.values(tData).reduce(
+    const allTaskArr = Object.values(tData).filter(Array.isArray);
+    const totalTasks = allTaskArr.reduce((s, tasks) => s + tasks.length, 0);
+    const tasksCompleted = allTaskArr.reduce(
       (s, tasks) => s + tasks.filter((t) => t.done).length,
       0,
     );
+    const taskCompletionRate =
+      totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+
+    const taskDayKeys = [...Object.keys(tData)].sort();
     let taskStreak = 0;
-    for (const d of [...Object.keys(tData)].sort().reverse()) {
+    for (const d of [...taskDayKeys].reverse()) {
       if (Array.isArray(tData[d]) && tData[d].some((t) => t.done)) taskStreak++;
       else break;
     }
+    let longestTaskStreak = 0, curTaskStreak = 0;
+    for (const d of taskDayKeys) {
+      if (Array.isArray(tData[d]) && tData[d].some((t) => t.done)) {
+        curTaskStreak++;
+        longestTaskStreak = Math.max(longestTaskStreak, curTaskStreak);
+      } else curTaskStreak = 0;
+    }
+
+    const totalGoals = goals.length;
     const goalsCompleted = goals.filter((g) => {
       const ms = Array.isArray(g.milestones) ? g.milestones : [];
       return ms.length > 0 && ms.every((m) => m.completed);
+    }).length;
+    const goalsInProgress = goals.filter((g) => {
+      const ms = Array.isArray(g.milestones) ? g.milestones : [];
+      return ms.length > 0 && ms.some((m) => m.completed) && !ms.every((m) => m.completed);
     }).length;
     const goalsProgress = goals.reduce(
       (s, g) =>
@@ -1247,9 +1263,14 @@ function AnalyticsPanel() {
       daysTracked: days.length,
       activeDays,
       hasHabitData: totalHabits > 0,
+      totalTasks,
       tasksCompleted,
+      taskCompletionRate,
       taskStreak,
+      longestTaskStreak,
+      totalGoals,
       goalsCompleted,
+      goalsInProgress,
       milestonesProgress:
         goalsTotal > 0 ? Math.round((goalsProgress / goalsTotal) * 100) : 0,
       consistencyTrend: Math.round(consistencyTrend),
@@ -1262,18 +1283,99 @@ function AnalyticsPanel() {
     [stats],
   );
 
+  const showFullAnalytics = stats ? stats.activeDays >= 3 : false;
+
   if (loading)
     return (
-      <div className="flex justify-center py-12">
-        <LoadingSpinner />
+      <div className="space-y-5">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+            {[...Array(3)].map((_, i) => (
+              <LoadingSkeleton key={i} className="h-7 w-16 rounded-lg" />
+            ))}
+          </div>
+          <LoadingSkeleton className="h-7 w-20 rounded-lg ml-auto" />
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.07] overflow-hidden">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="p-5 sm:p-6 space-y-5">
+            <div className="flex items-center gap-4 pb-5 border-b border-white/5">
+              <LoadingSkeleton className="h-20 w-20 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <LoadingSkeleton className="h-6 w-32" />
+                <LoadingSkeleton className="h-3 w-48" />
+                <LoadingSkeleton className="h-1 w-full rounded-full" />
+              </div>
+            </div>
+            <div className="flex items-center gap-5">
+              <LoadingSkeleton className="h-10 w-20" />
+              <div className="w-px self-stretch bg-white/5" />
+              <LoadingSkeleton className="h-10 w-16" />
+              <div className="w-px self-stretch bg-white/5" />
+              <LoadingSkeleton className="h-10 w-16" />
+              <div className="w-px self-stretch bg-white/5" />
+              <LoadingSkeleton className="h-10 w-16" />
+            </div>
+          </div>
+        </div>
+
+        <LoadingSkeleton className="h-48 w-full rounded-xl" />
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="border border-surface-700/30 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-3">
+                <LoadingSkeleton className="h-9 w-9 rounded-xl" />
+                <div className="space-y-1.5 flex-1">
+                  <LoadingSkeleton className="h-3 w-16" />
+                  <LoadingSkeleton className="h-5 w-12" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <LoadingSkeleton className="h-56 w-full rounded-xl" />
+
+        <div className="space-y-3">
+          <LoadingSkeleton className="h-4 w-28" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="border border-white/[0.04] rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <LoadingSkeleton className="h-7 w-7 rounded-lg" />
+                    <div>
+                      <LoadingSkeleton className="h-3 w-16" />
+                      <LoadingSkeleton className="h-3 w-12 mt-0.5" />
+                    </div>
+                  </div>
+                  <LoadingSkeleton className="h-5 w-12" />
+                </div>
+                <LoadingSkeleton className="h-1.5 w-full rounded-full" />
+                <LoadingSkeleton className="h-3 w-40" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="border border-surface-700/30 rounded-xl p-5 space-y-2">
+              <LoadingSkeleton className="h-4 w-16" />
+              <LoadingSkeleton className="h-8 w-12" />
+              <LoadingSkeleton className="h-3 w-20" />
+            </div>
+          ))}
+        </div>
       </div>
     );
 
   const hasAnyData =
     stats &&
-    (stats.hasHabitData ||
-      stats.tasksCompleted > 0 ||
-      stats.goalsCompleted > 0);
+    (stats.hasHabitData || stats.tasksCompleted > 0 || stats.totalGoals > 0);
+  const hasTaskOrGoalData = stats && (stats.totalTasks > 0 || stats.totalGoals > 0);
 
   const scoreColors = {
     green: "#22c55e",
@@ -1334,14 +1436,15 @@ function AnalyticsPanel() {
             </div>
           </div>
 
+          {showFullAnalytics ? (
+          <>
+
           <div
-            className="rounded-2xl overflow-hidden"
+            className="rounded-2xl overflow-hidden analytics-hero"
             style={{
               background:
-                "linear-gradient(135deg,rgba(15,18,35,0.95) 0%,rgba(20,24,45,0.95) 100%)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow:
-                "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+                "linear-gradient(135deg, rgba(13,17,23,0.9) 0%, rgba(13,17,23,0.95) 100%)",
+              border: "1px solid rgba(255,255,255,0.07)",
             }}
           >
             <div
@@ -1378,7 +1481,7 @@ function AnalyticsPanel() {
                   </div>
                   <p className="text-xs text-gray-500">{scoreLabel?.desc}</p>
                   <div
-                    className="mt-2.5 h-1 rounded-full overflow-hidden"
+                    className="hero-progress mt-2.5 h-1 rounded-full overflow-hidden"
                     style={{ background: "rgba(255,255,255,0.07)" }}
                   >
                     <div
@@ -1611,6 +1714,42 @@ function AnalyticsPanel() {
               />
             </div>
           </div>
+          </>
+          ) : (
+            <div className="rounded-2xl border border-surface-700/30 p-6 sm:p-8 text-center space-y-6">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary-500/15 border border-primary-500/20 flex items-center justify-center">
+                  <BarChart3 className="h-6 w-6 text-primary-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Keep Tracking for 3 Days — Here's What's Coming</h3>
+                  <p className="text-sm text-gray-400 mt-1">Complete your daily habits to unlock health scores, streaks, and trends.</p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onClick={() => setLightboxImage('/analytics1.png')}
+                  className="group relative overflow-hidden rounded-xl border border-surface-700/30 bg-surface-900/50 flex-1 max-w-md transition-all duration-300 hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5 text-left cursor-pointer">
+                  <img src="/analytics1.png" alt="Analytics preview"
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface-900/80 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+                  </div>
+                </button>
+                <button onClick={() => setLightboxImage('/analytics2.png')}
+                  className="group relative overflow-hidden rounded-xl border border-surface-700/30 bg-surface-900/50 flex-1 max-w-md transition-all duration-300 hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/5 text-left cursor-pointer">
+                  <img src="/analytics2.png" alt="Analytics preview"
+                    className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                  <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface-900/80 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
@@ -1623,7 +1762,12 @@ function AnalyticsPanel() {
                 <p className="text-2xl font-bold text-white">
                   {stats.goalsCompleted}
                 </p>
-                <p className="text-xs text-gray-500">completed</p>
+                <p className="text-xs text-gray-500">
+                  of {stats.totalGoals} goals
+                  {stats.goalsInProgress > 0 && (
+                    <span className="text-gray-600 ml-1">&middot; {stats.goalsInProgress} in progress</span>
+                  )}
+                </p>
                 <div className="mt-2 h-1 bg-surface-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-yellow-500/70 rounded-full transition-all duration-700"
@@ -1645,7 +1789,18 @@ function AnalyticsPanel() {
                 <p className="text-2xl font-bold text-white">
                   {stats.tasksCompleted}
                 </p>
-                <p className="text-xs text-gray-500">completed</p>
+                <p className="text-xs text-gray-500">
+                  of {stats.totalTasks} tasks
+                  {stats.taskCompletionRate > 0 && (
+                    <span className="text-gray-600 ml-1">&middot; {stats.taskCompletionRate}% rate</span>
+                  )}
+                </p>
+                {stats.taskCompletionRate > 0 && (
+                  <div className="mt-2 h-1 bg-surface-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500/70 rounded-full transition-all duration-700"
+                      style={{ width: `${stats.taskCompletionRate}%` }} />
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -1658,7 +1813,10 @@ function AnalyticsPanel() {
                 <p className="text-2xl font-bold text-white">
                   {stats.taskStreak}d
                 </p>
-                <p className="text-xs text-gray-500">days with tasks done</p>
+                <p className="text-xs text-gray-500">current streak</p>
+                {stats.longestTaskStreak > 0 && (
+                  <p className="text-[10px] text-gray-600 mt-1">Longest: {stats.longestTaskStreak}d</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1688,6 +1846,19 @@ function AnalyticsPanel() {
                 <p className="text-[10px] text-gray-600">{s.d}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {lightboxImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setLightboxImage(null)}>
+          <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            <img src={lightboxImage} alt="Analytics preview"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-xl shadow-2xl" />
+            <button onClick={() => setLightboxImage(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-surface-800 border border-surface-600 flex items-center justify-center text-gray-400 hover:text-white hover:bg-surface-700 transition-all shadow-lg">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
           </div>
         </div>
       )}
