@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Key, Trash2, Info, Camera, ExternalLink } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { changePassword, deleteAccount } from '../../services/auth';
+import { changePassword, deleteAccount, linkPassword } from '../../services/auth';
 import { uploadProfilePicture } from '../../services/upload';
 import { useToast } from '../../components/ui/Toast';
 import Modal from '../../components/ui/Modal';
@@ -62,7 +62,11 @@ function SettingsModal({ open, onClose }) {
     }
     setPassLoading(true);
     try {
-      await changePassword(currentPassword, newPassword);
+      if (hasPassword) {
+        await changePassword(currentPassword, newPassword);
+      } else {
+        await linkPassword(user.email, newPassword);
+      }
       toast.success('Password updated successfully');
       setCurrentPassword('');
       setNewPassword('');
@@ -95,23 +99,24 @@ function SettingsModal({ open, onClose }) {
   };
 
   const isGoogle = user?.providerData?.[0]?.providerId === 'google.com';
+  const hasPassword = user?.providerData?.some(p => p.providerId === 'password');
 
   return (
-    <Modal open={open} onClose={onClose} title="Settings" size="xl">
+    <Modal open={open} onClose={onClose} title="Settings" size="xl" scrollable>
       <div className="flex flex-col md:flex-row gap-0 -m-6">
 
-        <div className="md:w-44 shrink-0 md:border-r border-surface-700/50 p-2 flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible border-b md:border-b-0">
+        <div className="md:w-44 shrink-0 md:border-r border-surface-700/50 p-1.5 md:p-2 flex md:flex-col gap-0.5 md:gap-1 overflow-x-auto md:overflow-x-visible border-b md:border-b-0">
           {tabs.map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button key={tab.id} onClick={() => { setActiveTab(tab.id); setShowDeleteConfirm(false); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left
+                className={`flex items-center gap-1.5 md:gap-2.5 px-2 md:px-3 py-1.5 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all text-left whitespace-nowrap shrink-0
                   ${isActive
                     ? tab.danger ? 'bg-red-500/10 text-red-400' : 'bg-primary-500/10 text-primary-400'
                     : tab.danger ? 'text-gray-500 hover:text-red-400 hover:bg-red-500/5' : 'text-gray-400 hover:text-gray-200 hover:bg-surface-700'
                   }`}>
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-3.5 md:h-4 w-3.5 md:w-4 shrink-0" />
                 <span>{tab.label}</span>
               </button>
             );
@@ -119,7 +124,7 @@ function SettingsModal({ open, onClose }) {
         </div>
 
 
-        <div className="flex-1 p-6 max-h-[480px] overflow-y-auto">
+        <div className="flex-1 p-6 h-[460px] overflow-y-auto custom-scroll">
           {activeTab === 'profile' && (
             <div className="space-y-5">
               <div>
@@ -176,25 +181,38 @@ function SettingsModal({ open, onClose }) {
 
           {activeTab === 'security' && (
             <div className="space-y-5">
-              {isGoogle ? (
-                <div className="bg-surface-900/50 rounded-lg p-5 text-center space-y-3">
-                  <Key className="h-8 w-8 text-gray-600 mx-auto" />
-                  <p className="text-sm text-gray-400">Signed in with Google</p>
-                  <p className="text-xs text-gray-500">Your account is managed by Google. Password changes are handled through your Google account.</p>
-                </div>
-              ) : (
+              {isGoogle && !hasPassword ? (
                 <div>
-                  <h3 className="text-sm font-medium text-white mb-4">Change Password</h3>
+                  <h3 className="text-sm font-medium text-white mb-1">Set Password</h3>
+                  <p className="text-xs text-gray-500 mb-4">You signed in with Google. Set a password to enable email sign-in as well.</p>
                   <form onSubmit={handlePasswordChange} className="space-y-4">
-                    <Input label="Current Password" type="password" value={currentPassword}
-                      onChange={e => setCurrentPassword(e.target.value)} required />
                     <Input label="New Password" type="password" value={newPassword}
                       onChange={e => setNewPassword(e.target.value)} required />
                     <Input label="Confirm New Password" type="password" value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)} required />
                     <div className="flex justify-end pt-2">
-                      <Button type="submit" loading={passLoading} disabled={!currentPassword || !newPassword || !confirmPassword}>
-                        Update Password
+                      <Button type="submit" loading={passLoading} disabled={!newPassword || !confirmPassword}>
+                        Set Password
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-sm font-medium text-white mb-4">Change Password</h3>
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                    {hasPassword && (
+                      <Input label="Current Password" type="password" value={currentPassword}
+                        onChange={e => setCurrentPassword(e.target.value)} required />
+                    )}
+                    <Input label="New Password" type="password" value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)} required />
+                    <Input label="Confirm New Password" type="password" value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)} required />
+                    <div className="flex justify-end pt-2">
+                      <Button type="submit" loading={passLoading}
+                        disabled={hasPassword ? (!currentPassword || !newPassword || !confirmPassword) : (!newPassword || !confirmPassword)}>
+                        {hasPassword ? 'Update Password' : 'Set Password'}
                       </Button>
                     </div>
                   </form>
