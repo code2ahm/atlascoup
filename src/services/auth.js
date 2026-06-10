@@ -9,6 +9,7 @@ import {
   deleteUser,
   reauthenticateWithCredential,
   EmailAuthProvider,
+  linkWithCredential,
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
@@ -39,6 +40,13 @@ export async function changePassword(currentPassword, newPassword) {
   const credential = EmailAuthProvider.credential(user.email, currentPassword);
   await reauthenticateWithCredential(user, credential);
   return updatePassword(user, newPassword);
+}
+
+export async function linkPassword(email, password) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('No authenticated user');
+  const credential = EmailAuthProvider.credential(email, password);
+  return linkWithCredential(user, credential);
 }
 
 export async function deleteAccount(currentPassword) {
