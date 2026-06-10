@@ -754,7 +754,7 @@ function Landing() {
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
                 <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                 <div className="flex-1 mx-3 bg-white/[0.05] border border-white/[0.06] rounded-md px-3 py-1 text-[11px] text-[#64748b]">
-                  atlcoup.web.app/tracker
+                  atlscoup.web.app/tracker
                 </div>
               </div>
               <button onClick={() => navigate(user ? '/tracker' : '/login')} className="relative w-full flex-1 text-left">
