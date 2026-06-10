@@ -5,6 +5,7 @@ const useGoalsStore = create((set, get) => ({
   goals: [],
   loading: false,
   error: null,
+  _unsubGoals: null,
 
   fetchGoals: async (uid) => {
     set({ loading: true, error: null });
@@ -16,10 +17,25 @@ const useGoalsStore = create((set, get) => ({
     }
   },
 
+  subscribeGoals: (uid) => {
+    set({ loading: true, error: null });
+    get()._unsubGoals?.();
+    const unsub = goalsService.subscribeGoals(uid, (goals) => {
+      set({ goals, loading: false });
+    }, (err) => {
+      set({ error: err.message, loading: false });
+    });
+    set({ _unsubGoals: unsub });
+    return unsub;
+  },
+
+  unsubscribeGoals: () => {
+    get()._unsubGoals?.();
+    set({ _unsubGoals: null });
+  },
+
   addGoal: async (uid, goalData) => {
-    const goal = await goalsService.addGoal(uid, goalData);
-    set(state => ({ goals: [goal, ...state.goals] }));
-    return goal;
+    await goalsService.addGoal(uid, goalData);
   },
 
   updateGoal: async (uid, goalId, data) => {

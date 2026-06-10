@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -16,6 +17,12 @@ function getGoalsCollection(uid) {
 export async function getGoals(uid) {
   const snapshot = await getDocs(getGoalsCollection(uid));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export function subscribeGoals(uid, onData, onError = () => {}) {
+  return onSnapshot(getGoalsCollection(uid), (snap) => {
+    onData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, onError);
 }
 
 export async function addGoal(uid, goalData) {
