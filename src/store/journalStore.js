@@ -5,6 +5,7 @@ const useJournalStore = create((set, get) => ({
   entries: [],
   loading: false,
   error: null,
+  _unsubJournal: null,
 
   fetchEntries: async (uid) => {
     set({ loading: true, error: null });
@@ -16,10 +17,25 @@ const useJournalStore = create((set, get) => ({
     }
   },
 
+  subscribeJournal: (uid) => {
+    set({ loading: true, error: null });
+    get()._unsubJournal?.();
+    const unsub = journalService.subscribeJournal(uid, (entries) => {
+      set({ entries, loading: false });
+    }, (err) => {
+      set({ error: err.message, loading: false });
+    });
+    set({ _unsubJournal: unsub });
+    return unsub;
+  },
+
+  unsubscribeJournal: () => {
+    get()._unsubJournal?.();
+    set({ _unsubJournal: null });
+  },
+
   addEntry: async (uid, { text, mood, dateKey }) => {
-    const entry = await journalService.addJournalEntry(uid, { text, mood, dateKey });
-    set(state => ({ entries: [entry, ...state.entries] }));
-    return entry;
+    await journalService.addJournalEntry(uid, { text, mood, dateKey });
   },
 
   deleteEntry: async (uid, entryId) => {
