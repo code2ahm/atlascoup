@@ -20,11 +20,18 @@ function LoadingSkeleton({ className }) {
 
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center space-y-4">
-        <LoadingSpinner size="lg" />
-        <p className="text-sm text-gray-500">Loading...</p>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0e1219]">
+      <div className="relative w-10 h-10 mb-6">
+        <div className="absolute inset-0 rounded-full border-2 border-white/5" />
+        <div className="absolute inset-0 rounded-full border-2 border-t-transparent border-[#4facfe] animate-spin" />
       </div>
+      <p className="text-sm text-gray-400 text-center max-w-[220px] leading-relaxed">
+        Loading your app. This may take a few seconds.
+        <br />
+        <span className="text-gray-600 text-xs">
+          If you are stuck here for more than 30s please refresh.
+        </span>
+      </p>
     </div>
   );
 }

@@ -6,7 +6,7 @@ function Card({ className, glass = false, gradient = false, children, ...props }
       className={cn(
         'rounded-2xl',
         gradient ? 'gradient-border' : '',
-        glass ? 'glass' : 'bg-surface-800 border border-white/[0.04] shadow-[0_10px_30px_rgba(0,0,0,0.45)]',
+        glass ? 'glass' : 'bg-surface-800 border border-white/[0.07] shadow-[0_10px_30px_rgba(0,0,0,0.45)]',
         'p-5',
         className
       )}
