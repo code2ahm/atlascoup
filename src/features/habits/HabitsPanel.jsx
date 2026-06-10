@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Pencil, ChevronLeft, ChevronRight, Circle, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronLeft, ChevronRight, Circle, CheckCircle2, Repeat, Info, TriangleAlert } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useHabitsStore from '../../store/habitsStore';
 import { getMonthId, formatDateKey } from '../../lib/utils';
@@ -8,7 +8,7 @@ import { useToast } from '../../components/ui/Toast';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { LoadingSkeleton } from '../../components/ui/LoadingSpinner';
 
 function getWeekRange(date) {
   const d = new Date(date);
@@ -28,11 +28,13 @@ function formatWeekKey(date) {
 
 function HabitsPanel() {
   const { user } = useAuthStore();
-  const { habits, loading, fetchHabits, addHabit, updateHabit, deleteHabit, toggleDay } = useHabitsStore();
+  const subscribeHabits = useHabitsStore(s => s.subscribeHabits);
+  const { habits, loading, addHabit, updateHabit, deleteHabit, toggleDay } = useHabitsStore();
   const toast = useToast();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
+  const [newHabitRepeat, setNewHabitRepeat] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -47,7 +49,10 @@ function HabitsPanel() {
   const weekKey = formatWeekKey(weekBase);
 
   useEffect(() => {
-    if (user) fetchHabits(user.uid, today);
+    if (user) {
+      const unsub = subscribeHabits(user.uid, today);
+      return () => unsub();
+    }
   }, [user, monthId]);
 
   const weekDays = useMemo(() => {
@@ -74,10 +79,15 @@ function HabitsPanel() {
 
   const handleAddHabit = async () => {
     if (!newHabitName.trim()) return;
+    if (habits.length >= 10) {
+      toast.error('Maximum 10 habits allowed. Delete one to add another.');
+      return;
+    }
     setAdding(true);
     try {
-      await addHabit(user.uid, newHabitName.trim(), today);
+      await addHabit(user.uid, newHabitName.trim(), newHabitRepeat, today);
       setNewHabitName('');
+      setNewHabitRepeat(false);
       setShowAddModal(false);
       toast.success('Habit added!');
     } catch { toast.error('Failed to add habit'); }
@@ -126,11 +136,51 @@ function HabitsPanel() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><LoadingSpinner /></div>
+        <div className="space-y-3 py-4">
+          <div className="hidden sm:grid grid-cols-[minmax(160px,1.8fr)_repeat(7,1fr)] gap-x-3 gap-y-3 items-center">
+            <LoadingSkeleton className="h-3 w-16" />
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <LoadingSkeleton className="h-3 w-8" />
+                <LoadingSkeleton className="h-5 w-5 rounded-full" />
+              </div>
+            ))}
+          </div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="hidden sm:grid grid-cols-[minmax(160px,1.8fr)_repeat(7,1fr)] gap-x-3 gap-y-3 items-center">
+              <LoadingSkeleton className="h-5 w-32" />
+              {[...Array(7)].map((_, j) => (
+                <div key={j} className="flex justify-center">
+                  <LoadingSkeleton className="h-7 w-7 rounded-md" />
+                </div>
+              ))}
+            </div>
+          ))}
+          {[...Array(3)].map((_, i) => (
+            <div key={`mob-${i}`} className="sm:hidden bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2">
+              <LoadingSkeleton className="h-4 w-28" />
+              <div className="flex gap-2 justify-between">
+                {[...Array(7)].map((_, j) => (
+                  <LoadingSkeleton key={j} className="h-6 w-6 rounded-md" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : habits.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 mb-4">No habits yet. Start by adding one!</p>
           <Button onClick={() => setShowAddModal(true)}><Plus className="h-4 w-4" /> Add Your First Habit</Button>
+          <div className="mt-8 mx-auto max-w-md flex items-start gap-3 bg-amber-500/8 border border-amber-500/20 rounded-xl p-4 text-left">
+            <TriangleAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-300 mb-1">Tip for accurate analytics</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                For the most reliable analytics, add all your habits at once rather than adding new ones throughout the month. 
+                Habits created mid-month only track from their start date, which affects your streaks, perfect days, and health score calculations.
+              </p>
+            </div>
+          </div>
         </div>
       ) : (
         <>
@@ -160,7 +210,10 @@ function HabitsPanel() {
                       className="w-full bg-surface-800 rounded px-2 py-1 text-sm font-semibold text-white outline-none border border-primary-500/30" autoFocus
                       onClick={e => e.stopPropagation()} />
                   ) : (
-                    <p className="text-sm font-semibold text-gray-200 truncate flex-1">{habit.name}</p>
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
+                      <p className="text-sm font-semibold text-gray-200 truncate">{habit.name}</p>
+                    </div>
                   )}
                   <button onClick={() => { setEditingId(habit.id); setEditName(habit.name); }}
                     className="shrink-0 p-0.5 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
@@ -208,7 +261,10 @@ function HabitsPanel() {
               <motion.div key={habit.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 className="bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-white truncate pr-2">{habit.name}</p>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
+                    {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
+                    <p className="text-sm font-medium text-white truncate">{habit.name}</p>
+                  </div>
                   <button onClick={() => handleDeleteHabit(habit.id)}
                     className="shrink-0 p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
                     <Trash2 className="h-3.5 w-3.5" />
@@ -259,7 +315,27 @@ function HabitsPanel() {
         <form onSubmit={e => { e.preventDefault(); handleAddHabit(); }} className="space-y-4">
           <Input label="Habit Name" placeholder="e.g., Read 30 minutes, Meditate, Exercise..." value={newHabitName}
             onChange={e => setNewHabitName(e.target.value)} autoFocus />
-          <div className="flex justify-end gap-3">
+
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <div className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${newHabitRepeat ? 'bg-primary-500' : 'bg-surface-700'}`}>
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${newHabitRepeat ? 'translate-x-4' : ''}`} />
+              </div>
+              <input type="checkbox" checked={newHabitRepeat} onChange={e => setNewHabitRepeat(e.target.checked)} className="sr-only" />
+              <div className="flex items-center gap-1.5">
+                <Repeat className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-sm text-gray-300">Repeat monthly</span>
+              </div>
+            </label>
+            <div className="flex items-start gap-1.5 pl-12">
+              <Info className="h-3 w-3 text-gray-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                When enabled, this habit will automatically carry over to each new month so you don't have to recreate it.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-1">
             <Button variant="ghost" onClick={() => setShowAddModal(false)}>Cancel</Button>
             <Button type="submit" loading={adding} disabled={!newHabitName.trim()}>Add Habit</Button>
           </div>
