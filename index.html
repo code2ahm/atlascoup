@@ -59,10 +59,32 @@
       rel="stylesheet"
     />
 
+    <style>
+      #splash {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        background: linear-gradient(180deg, #0e1219 0%, #080b12 100%);
+        font-family: 'Quicksand', sans-serif;
+        transition: opacity 0.4s ease;
+      }
+      #splash.hide { opacity: 0; pointer-events: none; }
+      #splash-logo { font-size: 24px; font-weight: 700; color: #fff; letter-spacing: -0.3px; margin-bottom: 28px; }
+      #splash-logo span { color: #4facfe; }
+      #splash-spinner { width: 28px; height: 28px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #4facfe; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
     <title>Atlas Coup - Track Habits, Goals & Tasks</title>
+    <script src="https://www.google.com/recaptcha/api.js?render=explicit" async defer></script>
   </head>
-  <body class="bg-[#050811] text-white font-quicksand antialiased">
-    <div id="root"></div>
+  <body class="text-white font-quicksand antialiased">
+    <div id="root">
+      <div id="splash">
+        <div id="splash-logo">Atlas <span>Coup</span></div>
+        <div id="splash-spinner"></div>
+      </div>
+    </div>
+    <script src="/splash.js" defer></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
