@@ -8,7 +8,11 @@ import { PageLoader } from './components/ui/LoadingSpinner';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const TrackerLayout = lazy(() => import('./components/layout/TrackerLayout'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function App() {
   const init = useAuthStore(s => s.init);
@@ -29,6 +33,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify" element={<VerifyEmail />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/tracker" element={
             <ProtectedRoute>
               <ErrorBoundary>
@@ -36,7 +43,7 @@ function App() {
               </ErrorBoundary>
             </ProtectedRoute>
           } />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </>
