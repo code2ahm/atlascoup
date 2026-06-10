@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBpvc3W7oPxw1RECDRmeTjyw3DuWT0goBc",
@@ -15,9 +16,21 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 export const storage = getStorage(app);
 
 setPersistence(auth, browserLocalPersistence);
+
+const RECAPTCHA_V3_KEY = '6LdiLRctAAAAABIZmRn1RA7vKq7a-XqvoegWAF-u';
+const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+if (!isLocalhost && RECAPTCHA_V3_KEY) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(RECAPTCHA_V3_KEY),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
 export default app;
