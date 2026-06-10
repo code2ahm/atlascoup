@@ -10,7 +10,7 @@ import { useToast } from '../components/ui/Toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
-const RECAPTCHA_SITE_KEY = '6LcD1RYtAAAAAJblY_oe0fBA7wDwuyRCm7iawqwW';
+const RECAPTCHA_SITE_KEY = '6LddYxctAAAAAJdTVBzuPnKnkXg_1sptMpuT2sZH';
 const VERIFY_URL = `${window.location.origin}/verify`;
 
 function ParticlesBG() {
