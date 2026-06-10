@@ -4,10 +4,9 @@
 
 /* ─── Theme tokens ─────────────────────────────────────────────── */
 :root {
-  --glass-bg: rgba(15, 20, 35, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-bg: rgba(13, 17, 23, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.07);
   --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  --glass-inner: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   --glass-blur: 18px;
 
   --heatmap-empty: #1B2233;
@@ -19,33 +18,31 @@
 }
 
 /* ─── Global background ──────────────────────────────────────────── */
+html, body, #root {
+  min-height: 100vh;
+}
 body {
-  background:
-    radial-gradient(ellipse at 15% 15%, rgba(50, 90, 255, 0.14), transparent 40%),
-    radial-gradient(ellipse at 85% 85%, rgba(0, 140, 255, 0.08), transparent 35%),
-    #050816 !important;
+  background: linear-gradient(180deg, #0e1219 0%, #080b12 100%) !important;
   background-attachment: fixed !important;
 }
 
 /* ─── Surface overrides (dark glass) ─────────────────────────────── */
 @layer utilities {
-  .bg-surface-900 { background: transparent; }
-  .bg-surface-900\/50 { background: rgba(5, 8, 22, 0.5); }
+  .bg-surface-900 { background: rgba(10, 14, 20, 0.95); }
+  .bg-surface-900\/50 { background: rgba(10, 14, 20, 0.5); }
 
   .bg-surface-850 {
-    background: rgba(12, 16, 28, 0.85);
-    backdrop-filter: blur(16px);
+    background: rgba(13, 17, 23, 0.92);
   }
-  .bg-surface-850\/95 { background: rgba(12, 16, 28, 0.92); }
+  .bg-surface-850\/95 { background: rgba(13, 17, 23, 0.95); }
 
   .bg-surface-800 {
-    background: rgba(15, 20, 35, 0.72);
-    backdrop-filter: blur(18px);
+    background: rgba(13, 17, 23, 0.9);
   }
-  .bg-surface-800\/30 { background: rgba(15, 20, 35, 0.28); }
-  .bg-surface-800\/40 { background: rgba(15, 20, 35, 0.36); }
-  .bg-surface-800\/50 { background: rgba(15, 20, 35, 0.46); }
-  .bg-surface-800\/60 { background: rgba(15, 20, 35, 0.56); }
+  .bg-surface-800\/30 { background: rgba(13, 17, 23, 0.27); }
+  .bg-surface-800\/40 { background: rgba(13, 17, 23, 0.36); }
+  .bg-surface-800\/50 { background: rgba(13, 17, 23, 0.45); }
+  .bg-surface-800\/60 { background: rgba(13, 17, 23, 0.54); }
 
   .bg-surface-700 { background: rgba(255, 255, 255, 0.06); }
   .bg-surface-700\/30 { background: rgba(255, 255, 255, 0.03); }
@@ -54,6 +51,9 @@ body {
   .bg-surface-700\/80 { background: rgba(255, 255, 255, 0.08); }
 
   .bg-surface-600 { background: rgba(255, 255, 255, 0.10); }
+  .dash-tasks {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
 }
 
 /* ─── Border overrides ─────────────────────────────────────────────── */
@@ -88,20 +88,14 @@ body {
 @layer components {
   .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
-    box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   }
 
   .glass-card-soft {
-    background: rgba(15, 20, 35, 0.55);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    box-shadow:
-      0 8px 24px rgba(0, 0, 0, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   .glass-nav {
@@ -113,29 +107,23 @@ body {
   }
 }
 
-/* ─── Base layer overrides (border defaults) ─────────────────────────── */
+/* ─── Base layer overrides (border defaults + scrollbar) ──────────── */
 @layer base {
   * {
     border-color: rgba(255, 255, 255, 0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(79, 172, 254, 0.25) transparent;
   }
   body {
     color: #fff;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 9999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.12);
   }
 }
 
 /* ─── Existing glass / gradient utilities ────────────────────────────── */
 @layer components {
   .glass {
-    background: rgba(15, 20, 35, 0.6);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.07);
   }
   .glass-hover {
     @apply transition-colors;
@@ -176,24 +164,23 @@ body {
   --text-dim: #64748b;
 
   --heatmap-empty: #ebedf0;
-  --heatmap-l0: #c6e48b;
-  --heatmap-l1: #7bc96f;
-  --heatmap-l2: #239a3b;
-  --heatmap-l3: #196127;
-  --heatmap-l4: #0d5e1a;
+  --heatmap-l0: #f0faf0;
+  --heatmap-l1: #dcfce7;
+  --heatmap-l2: #bbf7d0;
+  --heatmap-l3: #86efac;
+  --heatmap-l4: #22c55e;
 }
 
 [data-theme="light"] body {
-  background-color: var(--page-bg) !important;
-  background-image: none !important;
+  background: var(--page-bg) !important;
   color: var(--text-primary);
 }
 
 [data-theme="light"] .bg-surface-900 { background-color: var(--page-bg) !important; backdrop-filter: none !important; }
 [data-theme="light"] .bg-surface-900\/50 { background-color: color-mix(in srgb, var(--page-bg) 50%, transparent) !important; backdrop-filter: none !important; }
-[data-theme="light"] .bg-surface-850 { background-color: var(--sidebar-bg) !important; backdrop-filter: none !important; }
+[data-theme="light"] .bg-surface-850 { background: var(--sidebar-bg) !important; }
 [data-theme="light"] .bg-surface-850\/95 { background-color: color-mix(in srgb, var(--sidebar-bg) 95%, transparent) !important; backdrop-filter: none !important; }
-[data-theme="light"] .bg-surface-800 { background-color: var(--card-bg) !important; backdrop-filter: none !important; }
+[data-theme="light"] .bg-surface-800 { background: var(--card-bg) !important; }
 [data-theme="light"] .bg-surface-800\/30 { background-color: color-mix(in srgb, var(--card-bg) 30%, transparent) !important; backdrop-filter: none !important; }
 [data-theme="light"] .bg-surface-800\/40 { background-color: color-mix(in srgb, var(--card-bg) 40%, transparent) !important; backdrop-filter: none !important; }
 [data-theme="light"] .bg-surface-800\/50 { background-color: color-mix(in srgb, var(--card-bg) 50%, transparent) !important; backdrop-filter: none !important; }
@@ -204,6 +191,34 @@ body {
 [data-theme="light"] .bg-surface-700\/60 { background-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important; }
 [data-theme="light"] .bg-surface-700\/80 { background-color: color-mix(in srgb, var(--border-color) 80%, transparent) !important; }
 [data-theme="light"] .bg-surface-600 { background-color: var(--border-light) !important; }
+/* Button bg overrides (arbitrary) */
+[data-theme="light"] .bg-white\/\[0\.06\] { background-color: var(--border-color) !important; }
+[data-theme="light"] .bg-white\/\[0\.08\] { background-color: var(--border-color) !important; }
+[data-theme="light"] .bg-white\/\[0\.1\] { background-color: var(--border-color) !important; }
+[data-theme="light"] .bg-white\/\[0\.15\] { background-color: color-mix(in srgb, var(--border-color) 80%, transparent) !important; }
+[data-theme="light"] .hover\:bg-white\/\[0\.06\]:hover { background-color: var(--border-color) !important; }
+[data-theme="light"] .hover\:bg-white\/\[0\.1\]:hover { background-color: color-mix(in srgb, var(--border-color) 80%, transparent) !important; }
+/* Button bg overrides (plain opacity) */
+[data-theme="light"] .bg-white\/5 { background-color: var(--border-color) !important; }
+[data-theme="light"] .bg-white\/8 { background-color: color-mix(in srgb, var(--border-color) 60%, transparent) !important; }
+[data-theme="light"] .bg-white\/15 { background-color: var(--border-color) !important; }
+[data-theme="light"] .bg-white\/25 { background-color: color-mix(in srgb, var(--border-color) 80%, transparent) !important; }
+[data-theme="light"] .hover\:bg-white\/5:hover { background-color: var(--border-color) !important; }
+[data-theme="light"] .hover\:bg-white\/8:hover { background-color: var(--border-color) !important; }
+[data-theme="light"] .hover\:bg-white\/15:hover { background-color: color-mix(in srgb, var(--border-color) 80%, transparent) !important; }
+/* Button border overrides (plain opacity) */
+[data-theme="light"] .border-white\/5 { border-color: var(--border-light) !important; }
+[data-theme="light"] .border-white\/10 { border-color: var(--border-color) !important; }
+[data-theme="light"] .border-white\/20 { border-color: var(--border-color) !important; }
+[data-theme="light"] .hover\:border-white\/40:hover { border-color: var(--border-light) !important; }
+/* Dropdown / calendar custom bg */
+[data-theme="light"] .bg-\[rgb\(13\,17\,23\)\] { background-color: var(--card-bg) !important; }
+[data-theme="light"] .text-gray-100 { color: var(--text-primary) !important; }
+[data-theme="light"] .text-gray-300 { color: var(--text-secondary) !important; }
+[data-theme="light"] .text-gray-400 { color: var(--text-muted) !important; }
+[data-theme="light"] .text-gray-500 { color: var(--text-dim) !important; }
+[data-theme="light"] .text-white { color: var(--text-primary) !important; }
+[data-theme="light"] .hover\:bg-surface-700:hover { background-color: var(--border-color) !important; }
 
 [data-theme="light"] .border-surface-700 { border-color: var(--border-color); }
 [data-theme="light"] .border-surface-700\/20 { border-color: color-mix(in srgb, var(--border-color) 20%, transparent); }
@@ -230,6 +245,7 @@ body {
 [data-theme="light"] .hover\:bg-surface-800:hover,
 [data-theme="light"] .hover\:bg-surface-800\/80:hover { background-color: var(--card-bg) !important; backdrop-filter: none !important; }
 [data-theme="light"] .hover\:border-surface-600:hover { border-color: var(--border-light); }
+[data-theme="light"] .bg-surface-900 { background: var(--card-bg) !important; }
 [data-theme="light"] .hover\:border-surface-700:hover { border-color: var(--border-color); }
 [data-theme="light"] .hover\:text-white:hover,
 [data-theme="light"] .hover\:text-gray-200:hover { color: var(--text-primary) !important; }
@@ -250,11 +266,19 @@ body {
 [data-theme="light"] .bg-red-600.text-white { color: #fff !important; }
 [data-theme="light"] .hover\:from-primary-600:hover.text-white:hover,
 [data-theme="light"] .hover\:bg-red-700:hover.text-white:hover { color: #fff !important; }
+[data-theme="light"] .bg-primary-400\/15 { background-color: rgba(37, 99, 235, 0.08) !important; }
+[data-theme="light"] .hover\:bg-primary-400\/25:hover { background-color: rgba(37, 99, 235, 0.12) !important; }
+[data-theme="light"] .text-primary-300 { color: #2563eb !important; }
+[data-theme="light"] .border-primary-400\/20 { border-color: var(--border-color) !important; }
+[data-theme="light"] .border-primary-400\/30 { border-color: #2563eb !important; }
+[data-theme="light"] .hover\:border-primary-400\/50:hover { border-color: #1d4ed8 !important; }
+[data-theme="light"] .shadow-primary-400\/10 { --tw-shadow-color: rgba(0,0,0,0.06) !important; }
+[data-theme="light"] .hover\:text-primary-300:hover { color: #2563eb !important; }
+[data-theme="light"] .hover\:text-primary-200:hover { color: #1d4ed8 !important; }
 
 /* ─── Light mode: glass overrides ──────────────────────────────────── */
 [data-theme="light"] .glass-card {
   background: var(--card-bg) !important;
-  backdrop-filter: none !important;
   border-color: var(--border-color) !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
 }
@@ -263,17 +287,30 @@ body {
   backdrop-filter: blur(20px) !important;
   border-top-color: var(--border-color) !important;
 }
+[data-theme="light"] .glass-nav .text-white {
+  color: #111 !important;
+}
+.nav-top {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+[data-theme="light"] .nav-top {
+  border-bottom-color: var(--border-color) !important;
+}
 [data-theme="light"] .shadow-\[0_10px_30px_rgba\(0\,0\,0\,0\.45\)\] {
   box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
 }
 [data-theme="light"] .glass {
   background: var(--card-bg) !important;
-  backdrop-filter: none !important;
   border-color: var(--border-color) !important;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
 }
-[data-theme="light"] .border-white\/\[0\.04\] {
+[data-theme="light"] .border-white\/\[0\.04\],
+[data-theme="light"] .border-white\/\[0\.07\],
+[data-theme="light"] .border-white\/\[0\.1\] {
   border-color: var(--border-color) !important;
+}
+[data-theme="light"] .hover\:border-white\/\[0\.2\]:hover {
+  border-color: var(--border-light) !important;
 }
 
 /* ─── Light mode: tooltip overrides ──────────────────────────────── */
@@ -289,6 +326,110 @@ body {
   fill: rgba(0,0,0,0.02) !important;
 }
 
+/* ─── Light mode: analytics hero card ─────────────────────────────── */
+[data-theme="light"] .analytics-hero {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] .analytics-hero .h-px {
+  opacity: 0.12;
+}
+[data-theme="light"] .analytics-hero circle[stroke="rgba(255,255,255,0.07)"] {
+  stroke: var(--border-color) !important;
+}
+[data-theme="light"] .analytics-hero [style*="borderBottom"] {
+  border-bottom-color: var(--border-color) !important;
+}
+[data-theme="light"] .analytics-hero .hero-progress {
+  background: var(--border-color) !important;
+}
+
+/* ─── Light mode: export button ─────────────────────────────────── */
+[data-theme="light"] .export-btn {
+  background: var(--border-color) !important;
+  border-color: var(--border-light) !important;
+  color: var(--text-secondary) !important;
+}
+[data-theme="light"] .export-btn:hover {
+  background: color-mix(in srgb, var(--border-color) 70%, transparent) !important;
+}
+[data-theme="light"] .export-dropdown {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+}
+
+/* ─── Light mode: analytics tooltips ───────────────────────────── */
+[data-theme="light"] .cell-tooltip {
+  background: rgba(255,255,255,0.96) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+[data-theme="light"] .chart-tooltip {
+  background: rgba(255,255,255,0.96) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+}
+
+/* ─── Light mode: dashboard cards with inline gradients ─────────── */
+[data-theme="light"] .dash-score,
+[data-theme="light"] .dash-streaks,
+[data-theme="light"] .dash-tasks {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="light"] .dash-score [style*="background: rgba(255,255,255,0.04)"] {
+  background: var(--border-color) !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="light"] .dash-streaks [class*="bg-surface-900"] {
+  background: var(--card-bg) !important;
+}
+[data-theme="light"] .dash-score .text-gray-500 {
+  color: var(--text-dim) !important;
+}
+[data-theme="light"] .dash-tasks {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+}
+[data-theme="light"] .dash-tasks .text-white {
+  color: #111 !important;
+}
+
+/* ─── Custom scrollbar ──────────────────────────────────────────── */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 172, 254, 0.25) transparent;
+}
+.custom-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(79, 172, 254, 0.25);
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 172, 254, 0.4);
+}
+
+/* ─── Global webkit scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 172, 254, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 172, 254, 0.4);
+}
+
 /* ─── Analytics: heatmap cell intensity ──────────────────────────────── */
 .heatmap-empty { fill: var(--heatmap-empty); }
 .heatmap-l1 { fill: var(--heatmap-l1); }
@@ -296,3 +437,5 @@ body {
 .heatmap-l3 { fill: var(--heatmap-l3); }
 .heatmap-l4 { fill: var(--heatmap-l4); }
 .heatmap-glow { box-shadow: 0 0 10px rgba(55, 217, 100, 0.18); }
+
+
