@@ -88,7 +88,8 @@ function TaskTimerRing({ task, onClose }) {
 
 function TasksPanel() {
   const { user } = useAuthStore();
-  const { tasks, loading, fetchTasks, addTask, toggleTask, deleteTask, updateTask } = useTasksStore();
+  const subscribeTasks = useTasksStore(s => s.subscribeTasks);
+  const { tasks, loading, addTask, toggleTask, deleteTask, updateTask } = useTasksStore();
   const toast = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
@@ -105,7 +106,10 @@ function TasksPanel() {
   const isToday = formatDateKey(new Date()) === dateKey;
 
   useEffect(() => {
-    if (user) fetchTasks(user.uid, currentDate);
+    if (user) {
+      const unsub = subscribeTasks(user.uid, currentDate);
+      return () => unsub();
+    }
   }, [user, dateKey]);
 
   const handlePrevDay = () => { const d = new Date(currentDate); d.setDate(d.getDate() - 1); setCurrentDate(d); };
@@ -114,6 +118,10 @@ function TasksPanel() {
 
   const handleAddTask = async () => {
     if (!newTaskName.trim()) return;
+    if (tasks.length >= 20) {
+      toast.error('Maximum 20 tasks per day. Complete or delete some to add more.');
+      return;
+    }
     setAdding(true);
     try {
       await addTask(user.uid, { name: newTaskName.trim(), timeMin: newTaskTime, repeatDaily: newTaskRepeat }, currentDate);

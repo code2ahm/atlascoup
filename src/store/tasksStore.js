@@ -5,6 +5,7 @@ const useTasksStore = create((set, get) => ({
   tasks: [],
   loading: false,
   error: null,
+  _unsubTasks: null,
 
   fetchTasks: async (uid, date) => {
     set({ loading: true, error: null });
@@ -16,9 +17,28 @@ const useTasksStore = create((set, get) => ({
     }
   },
 
-  saveTasks: async (uid, tasks, date) => {
-    await tasksService.saveTasks(uid, tasks, date);
-    set({ tasks });
+  subscribeTasks: (uid, date) => {
+    set({ loading: true, error: null });
+    get()._unsubTasks?.();
+    let fallbackDone = false;
+    const unsub = tasksService.subscribeTasks(uid, date, (tasks) => {
+      set({ tasks, loading: false });
+      if (tasks.length === 0 && !fallbackDone) {
+        fallbackDone = true;
+        tasksService.getTasks(uid, date).then(t => {
+          if (t.length > 0) set({ tasks: t, loading: false });
+        });
+      }
+    }, (err) => {
+      set({ error: err.message, loading: false });
+    });
+    set({ _unsubTasks: unsub });
+    return unsub;
+  },
+
+  unsubscribeTasks: () => {
+    get()._unsubTasks?.();
+    set({ _unsubTasks: null });
   },
 
   addTask: async (uid, task, date) => {
@@ -26,6 +46,7 @@ const useTasksStore = create((set, get) => ({
       id: Date.now().toString(),
       name: task.name,
       timeMin: task.timeMin || 25,
+      repeatDaily: task.repeatDaily || false,
       done: false,
       order: get().tasks.length,
     };
