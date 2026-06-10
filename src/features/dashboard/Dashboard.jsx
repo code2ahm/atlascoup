@@ -397,10 +397,14 @@ function DateBanner({ user }) {
 
 function Dashboard({ onTabChange }) {
   const { user } = useAuthStore();
-  const { habits, fetchHabits } = useHabitsStore();
-  const { tasks, fetchTasks } = useTasksStore();
-  const { goals, fetchGoals } = useGoalsStore();
-  const { entries, fetchEntries } = useJournalStore();
+  const { habits } = useHabitsStore();
+  const { tasks } = useTasksStore();
+  const { goals } = useGoalsStore();
+  const { entries } = useJournalStore();
+  const subscribeHabits = useHabitsStore(s => s.subscribeHabits);
+  const subscribeTasks = useTasksStore(s => s.subscribeTasks);
+  const subscribeGoals = useGoalsStore(s => s.subscribeGoals);
+  const subscribeJournal = useJournalStore(s => s.subscribeJournal);
   const [loaded, setLoaded] = useState(false);
 
   const today = useMemo(() => new Date(), []);
@@ -412,12 +416,14 @@ function Dashboard({ onTabChange }) {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      fetchHabits(user.uid, today),
-      fetchTasks(user.uid, today),
-      fetchGoals(user.uid),
-      fetchEntries(user.uid),
-    ]).then(() => setLoaded(true));
+    const unsubs = [
+      subscribeHabits(user.uid, today),
+      subscribeTasks(user.uid, today),
+      subscribeGoals(user.uid),
+      subscribeJournal(user.uid),
+    ];
+    setLoaded(true);
+    return () => unsubs.forEach(u => u());
   }, [user]);
 
   const healthScore = useMemo(() => {
