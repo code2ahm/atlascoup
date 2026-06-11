@@ -10,7 +10,7 @@ Free, full-stack personal productivity - Habits · Tasks · Goals · Journal · 
 
 </br>
 
-[![Atlas Coup](https://img.shields.io/badge/Atlas%20Coup-atlcoup.web.app-000000?style=for-the-badge&logo=dev.to&logoColor=white)](https://atlcoup.web.app)
+[![Atlas Coup](https://img.shields.io/badge/Atlas%20Coup-atlscoup.web.app-000000?style=for-the-badge&logo=dev.to&logoColor=white)](https://atlscoup.web.app)
 
 </br>
 
