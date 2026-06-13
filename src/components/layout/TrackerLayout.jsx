@@ -28,6 +28,7 @@ function TrackerLayout() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLightModeConfirm, setShowLightModeConfirm] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -160,6 +161,8 @@ function TrackerLayout() {
         userName={user.displayName || user.email?.split('@')[0] || ''}
         userEmail={user.email || ''}
         userPhoto={user.photoURL}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <main className="flex-1 overflow-y-auto pb-16 lg:pb-0 pt-12 lg:pt-0">
         <div className="p-6 lg:p-8 max-w-7xl mx-auto">
