@@ -110,14 +110,7 @@ function Login() {
   const checkEmailDomain = async (email) => {
     const domain = email.split('@')[1]?.toLowerCase();
     if (!domain) return false;
-    if (disposableDomains.includes(domain)) return false;
-    try {
-      const res = await fetch(`https://dns.google/resolve?name=${domain}&type=MX`);
-      const data = await res.json();
-      return Array.isArray(data.Answer) && data.Answer.length > 0;
-    } catch {
-      return true;
-    }
+    return !disposableDomains.includes(domain);
   };
 
   const checkSignupRate = () => {
