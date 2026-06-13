@@ -10,7 +10,7 @@ import { useToast } from '../components/ui/Toast';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
-const RECAPTCHA_SITE_KEY = '6LddYxctAAAAAJdTVBzuPnKnkXg_1sptMpuT2sZH';
+const HCAPTCHA_SITE_KEY = '96dc27d6-f804-443a-b9b4-8e5066cc4280';
 const VERIFY_URL = `${window.location.origin}/verify`;
 
 function ParticlesBG() {
@@ -69,7 +69,6 @@ function Login() {
   const [verifyChecking, setVerifyChecking] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const signupRef = useRef(Date.now());
-  const captchaRef = useRef(null);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [reRegisterCooldown, setReRegisterCooldown] = useState(() => {
     const raw = localStorage.getItem('atlas_signup_time');
@@ -86,16 +85,16 @@ function Login() {
   }, []);
 
   useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY || !showCaptchaModal || !captchaModalRef.current) return;
+    if (!HCAPTCHA_SITE_KEY || !showCaptchaModal || !captchaModalRef.current) return;
     if (captchaModalRef.current.hasChildNodes()) return;
-    if (!window.grecaptcha) return;
-    window.grecaptcha.render(captchaModalRef.current, {
-      sitekey: RECAPTCHA_SITE_KEY,
+    if (!window.hcaptcha) return;
+    window.hcaptcha.render(captchaModalRef.current, {
+      sitekey: HCAPTCHA_SITE_KEY,
       callback: (token) => setCaptchaToken(token),
       'expired-callback': () => setCaptchaToken(null),
       theme: 'dark',
     });
-  }, [showCaptchaModal, RECAPTCHA_SITE_KEY]);
+  }, [showCaptchaModal, HCAPTCHA_SITE_KEY]);
 
   useEffect(() => {
     setCaptchaToken(null);
@@ -173,7 +172,7 @@ function Login() {
     setLoading(true);
     try {
       if (isSignup) {
-        if (RECAPTCHA_SITE_KEY && !captchaToken) {
+        if (HCAPTCHA_SITE_KEY && !captchaToken) {
           setShowCaptchaModal(true);
           return;
         }
@@ -437,8 +436,6 @@ function Login() {
                       {resetSent ? 'Reset email sent! Check your inbox.' : 'Forgot password?'}
                     </button>
                   )}
-
-                  <div ref={captchaRef} className="hidden" />
 
                   <Button type="submit" loading={loading} className="w-full" size="lg">
                     {isSignup ? 'Create Account' : 'Sign In'}
