@@ -107,8 +107,7 @@ function TrackerLayout() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.96 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="absolute top-full right-2 mt-1.5 z-20 w-48 rounded-xl shadow-xl overflow-hidden"
-                style={{ background: 'rgb(13,17,23)', border: '1px solid rgba(255,255,255,0.08)' }}
+                className="absolute top-full right-2 mt-1.5 z-20 w-48 rounded-xl shadow-xl overflow-hidden bg-surface-850 border border-surface-700/50"
               >
                 <div className="p-3 border-b border-white/[0.06]">
                   <p className="text-xs font-medium text-white truncate">{user?.displayName || 'User'}</p>
