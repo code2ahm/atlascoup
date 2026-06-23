@@ -41,7 +41,7 @@ export function calculateHealthScore(habits, startDate, endDate) {
 
   const n = habits.length || 1;
   const consistency = Math.round((consistencySum / n) * 40);
-  const streak = Math.round((streakSum / n) * 25);
+  const streak = Math.round(((streakSum / n) / totalDays) * 25);
   const perfection = Math.round((perfectDays / totalDays) * 20);
 
   const firstRate = firstHalfTotal > 0 ? firstHalfCompleted / firstHalfTotal : 0;
@@ -63,15 +63,16 @@ export function calculateStreaks(habits, startDate, endDate) {
   const currentStreaks = habits.map(habit => {
     let streak = 0;
     let d = new Date(current);
+    d.setDate(d.getDate() - 1);
     while (d >= startDate) {
       const key = formatDateKey(d);
       if (habit.days && key in habit.days) {
         if (habit.days[key]) streak++;
         else break;
-        d.setDate(d.getDate() - 1);
       } else {
-        d.setDate(d.getDate() - 1);
+        break;
       }
+      d.setDate(d.getDate() - 1);
     }
     return { habit: habit.name, streak };
   });
