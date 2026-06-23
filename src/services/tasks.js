@@ -49,7 +49,15 @@ export async function saveTasks(uid, tasks, date = new Date()) {
   await setDoc(getTaskDocRef(uid, dateKey), { tasks });
 
   const repeatTasks = tasks.filter(t => t.repeatDaily);
-  await setDoc(getTemplateDocRef(uid), { templates: repeatTasks });
+  const templateSnap = await getDoc(getTemplateDocRef(uid));
+  const existingTemplates = templateSnap.exists() ? (templateSnap.data().templates || []) : [];
+  const merged = [...repeatTasks];
+  for (const et of existingTemplates) {
+    if (!merged.some(m => m.name === et.name && m.timeMin === et.timeMin)) {
+      merged.push(et);
+    }
+  }
+  await setDoc(getTemplateDocRef(uid), { templates: merged });
 }
 
 export async function saveTasksForDateRange(uid, tasksByDate) {

@@ -1051,7 +1051,7 @@ function computeStreak(sortedDays, hData) {
   let streak = 0;
   for (let i = sortedDays.length - 1; i >= 0; i--) {
     const h = hData[sortedDays[i]];
-    if (!h || h.total === 0) continue;
+    if (!h || h.total === 0) break;
     if (h.done > 0) streak++;
     else break;
   }
@@ -1062,7 +1062,7 @@ function computeLongestStreak(sortedDays, hData) {
     cur = 0;
   for (const d of sortedDays) {
     const h = hData[d];
-    if (!h || h.total === 0) continue;
+    if (!h || h.total === 0) { cur = 0; continue; }
     if (h.done > 0) {
       cur++;
       longest = Math.max(longest, cur);
