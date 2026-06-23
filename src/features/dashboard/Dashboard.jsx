@@ -683,7 +683,7 @@ function Dashboard({ onTabChange }) {
               },
               {
                 label: "Improvement",
-                value: `${Math.max(0, Math.round((healthScore?.improvement ?? 0) + 29))}%`,
+                value: `${Math.max(0, Math.round(healthScore?.improvement ?? 0))}%`,
                 color: "#a855f7",
                 bg: "rgba(168,85,247,0.1)",
                 icon: (
