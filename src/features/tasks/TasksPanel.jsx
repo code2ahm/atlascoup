@@ -15,6 +15,8 @@ import { LoadingSkeleton } from '../../components/ui/LoadingSpinner';
 import useTimerStore from '../../store/timerStore';
 
 let audioCtx = null;
+let beepInterval = null;
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -40,33 +42,44 @@ function playStartSound() {
   } catch {}
 }
 
-function playFinishSound() {
+function startFinishBeep() {
+  stopFinishBeep();
   try {
     const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    [0, 0.3, 0.6].forEach((delay) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, now + delay);
-      gain.gain.setValueAtTime(0.25, now + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.22);
-      osc.start(now + delay);
-      osc.stop(now + delay + 0.25);
-    });
+    const playBurst = () => {
+      const now = ctx.currentTime;
+      [0, 0.25, 0.5].forEach((delay) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, now + delay);
+        gain.gain.setValueAtTime(0.4, now + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.2);
+        osc.start(now + delay);
+        osc.stop(now + delay + 0.22);
+      });
+    };
+    playBurst();
+    beepInterval = setInterval(playBurst, 1800);
   } catch {}
+}
+
+function stopFinishBeep() {
+  if (beepInterval) {
+    clearInterval(beepInterval);
+    beepInterval = null;
+  }
 }
 
 function TaskTimerRing({ onClose }) {
   const { task, totalSecs, startedAt, pausedAt, done, start, pause, resume, reset, stop, getRemaining } = useTimerStore();
   const [_, forceUpdate] = useState(0);
   const timerRef = useRef(null);
-  const closeTimerRef = useRef(null);
   const prevStartedRef = useRef(startedAt);
   const prevDoneRef = useRef(done);
-  const radius = 96;
+  const radius = 72;
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
@@ -81,17 +94,21 @@ function TaskTimerRing({ onClose }) {
 
   useEffect(() => {
     if (done && !prevDoneRef.current) {
-      playFinishSound();
-      closeTimerRef.current = setTimeout(onClose, 2500);
+      startFinishBeep();
     }
     prevDoneRef.current = done;
-    return () => clearTimeout(closeTimerRef.current);
-  }, [done, onClose]);
+    return () => { if (done) stopFinishBeep(); };
+  }, [done]);
 
   useEffect(() => {
     if (startedAt && !prevStartedRef.current) playStartSound();
     prevStartedRef.current = startedAt;
   }, [startedAt]);
+
+  const handleDismiss = () => {
+    stopFinishBeep();
+    onClose();
+  };
 
   if (!task) return null;
 
@@ -104,23 +121,23 @@ function TaskTimerRing({ onClose }) {
   const isLow = !done && remaining > 0 && progress < 0.2;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md" onClick={onClose}>
-      <div className="bg-surface-900/90 rounded-3xl p-10 border border-surface-700/40 shadow-2xl max-w-md w-full mx-4 backdrop-blur-xl"
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md" onClick={handleDismiss}>
+      <div className="bg-surface-900/90 rounded-3xl p-10 border border-surface-700/40 shadow-2xl max-w-sm w-full mx-4 backdrop-blur-xl"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2 min-w-0">
-            {task.repeatDaily && <Repeat className="h-3.5 w-3.5 text-gray-500 shrink-0" />}
-            <p className="text-base font-medium text-white/90 truncate">{task.name}</p>
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex flex-col min-w-0 flex-1 text-center">
+            <p className="text-lg font-semibold text-white/90 truncate">{task.name}</p>
+            {task.timeMin && <span className="text-xs text-gray-500 mt-0.5">{task.timeMin} min</span>}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl text-gray-500 hover:text-white hover:bg-surface-700/60 transition-all">
-            <X className="h-5 w-5" />
+          <button onClick={handleDismiss} className="p-1 rounded-lg text-gray-500 hover:text-white hover:bg-surface-700/60 transition-all shrink-0">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-5">
           <div className="relative">
-            <svg width="260" height="260" className="transform -rotate-90">
+            <svg width="200" height="200" className="transform -rotate-90">
               <defs>
                 <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#4facfe" />
@@ -135,53 +152,54 @@ function TaskTimerRing({ onClose }) {
                   <stop offset="100%" stopColor="#16a34a" />
                 </linearGradient>
               </defs>
-              <circle cx="130" cy="130" r={radius} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="10" />
-              <circle cx="130" cy="130" r={radius} fill="none"
+              <circle cx="100" cy="100" r={radius} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="8" />
+              <circle cx="100" cy="100" r={radius} fill="none"
                 stroke={done ? "url(#ringGradientDone)" : isLow ? "url(#ringGradientLow)" : "url(#ringGradient)"}
-                strokeWidth="10" strokeLinecap="round"
+                strokeWidth="8" strokeLinecap="round"
                 strokeDasharray={circumference} strokeDashoffset={dashOffset}
                 className="transition-all duration-500 ease-linear" />
-              <circle cx="130" cy="130" r={radius} fill="none"
+              <circle cx="100" cy="100" r={radius} fill="none"
                 stroke={done ? "#22c55e" : isLow ? "#f97316" : "#4facfe"}
-                strokeWidth="10" strokeLinecap="round"
+                strokeWidth="8" strokeLinecap="round"
                 strokeDasharray={circumference} strokeDashoffset={dashOffset}
                 className="transition-all duration-500 ease-linear"
-                style={{ filter: 'blur(8px)', opacity: 0.3 }} />
+                style={{ filter: 'blur(6px)', opacity: 0.3 }} />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               {done ? (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }}
                   className="flex flex-col items-center gap-1">
-                  <CheckCircle2 className="h-12 w-12 text-green-400" />
-                  <span className="text-4xl font-bold text-green-400 tracking-tight mt-1">Done!</span>
-                  <span className="text-sm text-gray-500 mt-1">{task.timeMin || 25} min</span>
+                  <CheckCircle2 className="h-10 w-10 text-green-400" />
+                  <span className="text-3xl font-bold text-green-400 tracking-tight mt-0.5">Done!</span>
+                  <span className="text-xs text-gray-500 mt-1">{task.timeMin || 25} min</span>
                 </motion.div>
               ) : (
                 <motion.div key={remaining} className="flex flex-col items-center">
-                  <span className={`text-6xl font-bold tabular-nums tracking-tight transition-colors duration-500 ${isLow ? 'text-orange-400' : 'text-white'}`}>
+                  <span className={`text-4xl font-bold tabular-nums tracking-tight transition-colors duration-500 ${isLow ? 'text-orange-400' : 'text-white'}`}>
                     {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
                   </span>
-                  <span className="text-sm text-gray-500 mt-2">{task.timeMin || 25} min</span>
+                  <span className="text-xs text-gray-500 mt-1.5">{task.timeMin || 25} min</span>
                 </motion.div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             {done ? (
-              <motion.button onClick={onClose} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-                className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-green-500/30 hover:shadow-green-500/50">
-                <CheckCircle2 className="h-7 w-7 text-white" />
+              <motion.button onClick={handleDismiss} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                className="w-14 h-14 rounded-full bg-gradient-to-br from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-green-500/30 hover:shadow-green-500/50">
+                <CheckCircle2 className="h-6 w-6 text-white" />
               </motion.button>
             ) : (
               <>
                 <motion.button onClick={running ? pause : resume} whileTap={{ scale: 0.9 }}
-                  className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 hover:from-primary-400 hover:to-blue-500 flex items-center justify-center transition-all shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50">
-                  {running ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 text-white ml-0.5" />}
+                  className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 hover:from-primary-400 hover:to-blue-500 flex items-center justify-center transition-all shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50">
+                  {running ? <Pause className="h-6 w-6 text-white" /> : <Play className="h-6 w-6 text-white ml-0.5" />}
                 </motion.button>
                 <button onClick={reset}
-                  className="w-12 h-12 rounded-full bg-surface-800 hover:bg-surface-700 flex items-center justify-center transition-all active:scale-90 border border-surface-600/30">
-                  <RotateCcw className="h-5 w-5 text-gray-400" />
+                  className="w-11 h-11 rounded-full bg-surface-800 hover:bg-surface-700 flex items-center justify-center transition-all active:scale-90 border border-surface-600/30">
+                  <RotateCcw className="h-4 w-4 text-gray-400" />
                 </button>
               </>
             )}
