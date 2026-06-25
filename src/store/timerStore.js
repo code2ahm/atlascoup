@@ -7,10 +7,12 @@ const useTimerStore = create((set, get) => ({
   elapsedBeforePause: 0,
   pausedAt: null,
   done: false,
+  dateKey: null,
+  onComplete: null,
 
-  start: (task) => {
+  start: (task, dateKey, onComplete) => {
     const totalSecs = (task.timeMin || 25) * 60;
-    set({ task, totalSecs, startedAt: Date.now(), elapsedBeforePause: 0, pausedAt: null, done: false });
+    set({ task, totalSecs, startedAt: Date.now(), elapsedBeforePause: 0, pausedAt: null, done: false, dateKey, onComplete });
   },
 
   pause: () => {
@@ -27,11 +29,12 @@ const useTimerStore = create((set, get) => ({
   },
 
   tick: () => {
-    const { task, totalSecs, startedAt, elapsedBeforePause, pausedAt, done } = get();
+    const { task, totalSecs, startedAt, elapsedBeforePause, pausedAt, done, onComplete } = get();
     if (done || pausedAt || !startedAt) return;
     const elapsed = elapsedBeforePause + (Date.now() - startedAt) / 1000;
     if (elapsed >= totalSecs) {
       set({ done: true, startedAt: null, elapsedBeforePause: 0 });
+      onComplete?.();
     }
   },
 
@@ -39,12 +42,12 @@ const useTimerStore = create((set, get) => ({
     const { task } = get();
     if (task) {
       const totalSecs = (task.timeMin || 25) * 60;
-      set({ totalSecs, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false });
+      set({ totalSecs, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false, onComplete: null });
     }
   },
 
   stop: () => {
-    set({ task: null, totalSecs: 0, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false });
+    set({ task: null, totalSecs: 0, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false, dateKey: null, onComplete: null });
   },
 
   getRemaining: () => {

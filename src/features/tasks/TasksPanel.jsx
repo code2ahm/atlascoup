@@ -18,6 +18,7 @@ function TaskTimerRing({ onClose }) {
   const { task, totalSecs, startedAt, pausedAt, done, start, pause, resume, reset, stop, getRemaining } = useTimerStore();
   const [_, forceUpdate] = useState(0);
   const timerRef = useRef(null);
+  const closeTimerRef = useRef(null);
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
 
@@ -30,6 +31,13 @@ function TaskTimerRing({ onClose }) {
     }, 200);
     return () => clearInterval(timerRef.current);
   }, [done]);
+
+  useEffect(() => {
+    if (done) {
+      closeTimerRef.current = setTimeout(onClose, 2000);
+    }
+    return () => clearTimeout(closeTimerRef.current);
+  }, [done, onClose]);
 
   if (!task) return null;
 
@@ -148,6 +156,12 @@ function TasksPanel() {
   };
 
   const handleToggle = async (taskId) => { await toggleTask(user.uid, taskId, currentDate); };
+  const handleStartTimer = (task) => {
+    useTimerStore.getState().start(task, dateKey, () => {
+      const currentTask = useTasksStore.getState().tasks.find(t => t.id === task.id);
+      if (currentTask && !currentTask.done) handleToggle(task.id);
+    });
+  };
   const handleDelete = async (taskId) => { await deleteTask(user.uid, taskId, currentDate); toast.success('Task deleted'); };
 
   const handleRename = async (taskId) => {
@@ -225,8 +239,8 @@ function TasksPanel() {
           <div className="space-y-1.5">
             {pendingTasks.map(task => (
               <motion.div key={task.id} layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-3 bg-surface-800/50 rounded-xl px-4 py-3 border border-surface-700/30 group hover:border-surface-700 transition-all cursor-pointer"
-                onClick={() => useTimerStore.getState().start(task)}>
+                className="flex items-center gap-3 bg-surface-800/55 rounded-xl px-4 py-3 border-l-2 border-transparent hover:border-l-primary-500/40 border border-surface-700/30 group hover:border-surface-700 transition-all cursor-pointer"
+                onClick={() => handleStartTimer(task)}>
                 {isToday ? (
                   <button onClick={e => { e.stopPropagation(); handleToggle(task.id); }}
                     className="shrink-0 text-gray-500 hover:text-green-400 transition-colors">
@@ -254,7 +268,7 @@ function TasksPanel() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={e => { e.stopPropagation(); useTimerStore.getState().start(task); }}
+                  <button onClick={e => { e.stopPropagation(); handleStartTimer(task); }}
                     className="p-1.5 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
                     <Clock className="h-3.5 w-3.5" />
                   </button>
@@ -272,14 +286,14 @@ function TasksPanel() {
 
             {doneTasks.map(task => (
               <motion.div key={task.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex items-center gap-3 bg-surface-800/30 rounded-xl px-4 py-2.5 border border-surface-700/20 group">
-                <button onClick={() => handleToggle(task.id)} className="shrink-0 text-green-500">
+                className="flex items-center gap-3 bg-surface-800/20 rounded-xl px-4 py-2 border border-surface-700/10 group opacity-60 hover:opacity-100 transition-opacity">
+                <button onClick={() => handleToggle(task.id)} className="shrink-0 text-green-400 hover:text-green-300 transition-colors">
                   <CheckCircle2 className="h-5 w-5" />
                 </button>
-                <p className="flex-1 text-sm text-gray-500 line-through truncate">{task.name}</p>
-                {task.timeMin && <span className="text-xs text-gray-600 tabular-nums">{task.timeMin}m</span>}
+                <p className="flex-1 text-sm text-gray-600 line-through truncate">{task.name}</p>
+                {task.timeMin && <span className="text-xs text-gray-700 tabular-nums">{task.timeMin}m</span>}
                 <button onClick={() => handleDelete(task.id)}
-                  className="p-1.5 rounded text-gray-400 hover:text-red-400 transition-all">
+                  className="p-1.5 rounded text-gray-600 hover:text-red-400 transition-all">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </motion.div>
