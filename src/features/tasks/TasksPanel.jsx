@@ -12,40 +12,36 @@ import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import { LoadingSkeleton } from '../../components/ui/LoadingSpinner';
 
-function TaskTimerRing({ task, onClose }) {
-  const totalSecs = (task.timeMin || 25) * 60;
-  const [timeLeft, setTimeLeft] = useState(totalSecs);
-  const [running, setRunning] = useState(false);
-  const intervalRef = useRef(null);
+import useTimerStore from '../../store/timerStore';
+
+function TaskTimerRing({ onClose }) {
+  const { task, totalSecs, startedAt, pausedAt, done, start, pause, resume, reset, stop, getRemaining } = useTimerStore();
+  const [_, forceUpdate] = useState(0);
+  const timerRef = useRef(null);
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
-  const progress = timeLeft / totalSecs;
+
+  useEffect(() => {
+    if (done) return;
+    timerRef.current = setInterval(() => {
+      const store = useTimerStore.getState();
+      store.tick();
+      forceUpdate(n => n + 1);
+    }, 200);
+    return () => clearInterval(timerRef.current);
+  }, [done]);
+
+  if (!task) return null;
+
+  const remaining = getRemaining();
+  const progress = totalSecs > 0 ? remaining / totalSecs : 0;
   const dashOffset = circumference * (1 - progress);
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-
-  useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(t => {
-          if (t <= 1) { setRunning(false); return 0; }
-          return t - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [running]);
-
-  useEffect(() => {
-    setTimeLeft(totalSecs);
-    setRunning(false);
-  }, [task.id]);
-
-  const toggle = () => setRunning(!running);
-  const reset = () => { setRunning(false); setTimeLeft(totalSecs); };
+  const mins = Math.floor(remaining / 60);
+  const secs = Math.floor(remaining % 60);
+  const running = !!startedAt && !pausedAt && !done;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-surface-800 rounded-2xl p-8 border border-surface-700 shadow-2xl max-w-sm w-full mx-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm font-medium text-white truncate max-w-[200px]">{task.name}</p>
@@ -58,27 +54,45 @@ function TaskTimerRing({ task, onClose }) {
           <div className="relative">
             <svg width="200" height="200" className="transform -rotate-90">
               <circle cx="100" cy="100" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
-              <circle cx="100" cy="100" r={radius} fill="none" stroke="#4facfe" strokeWidth="8"
+              <circle cx="100" cy="100" r={radius} fill="none" stroke={done ? "#22c55e" : "#4facfe"} strokeWidth="8"
                 strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={dashOffset}
-                className="transition-all duration-1000 ease-linear" />
+                className="transition-all duration-500 ease-linear" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-4xl font-bold text-white tabular-nums tracking-tight">
-                {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-              </span>
-              <span className="text-xs text-gray-500 mt-1">{task.timeMin || 25} min</span>
+              {done ? (
+                <div className="flex flex-col items-center">
+                  <span className="text-4xl font-bold text-green-400 tracking-tight">Done!</span>
+                  <span className="text-xs text-gray-500 mt-1">{task.timeMin || 25} min</span>
+                </div>
+              ) : (
+                <>
+                  <span className="text-4xl font-bold text-white tabular-nums tracking-tight">
+                    {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">{task.timeMin || 25} min</span>
+                </>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={toggle}
-              className="w-14 h-14 rounded-full bg-primary-500 hover:bg-primary-600 flex items-center justify-center transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 active:scale-95">
-              {running ? <Pause className="h-6 w-6 text-white" /> : <Play className="h-6 w-6 text-white" />}
-            </button>
-            <button onClick={reset}
-              className="w-14 h-14 rounded-full bg-surface-700 hover:bg-surface-600 flex items-center justify-center transition-all active:scale-95">
-              <RotateCcw className="h-5 w-5 text-gray-400" />
-            </button>
+            {done ? (
+              <button onClick={onClose}
+                className="w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center transition-all active:scale-95 shadow-lg shadow-green-500/20">
+                <span className="text-white font-bold text-sm">OK</span>
+              </button>
+            ) : (
+              <>
+                <button onClick={running ? pause : resume}
+                  className="w-14 h-14 rounded-full bg-primary-500 hover:bg-primary-600 flex items-center justify-center transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 active:scale-95">
+                  {running ? <Pause className="h-6 w-6 text-white" /> : <Play className="h-6 w-6 text-white" />}
+                </button>
+                <button onClick={reset}
+                  className="w-14 h-14 rounded-full bg-surface-700 hover:bg-surface-600 flex items-center justify-center transition-all active:scale-95">
+                  <RotateCcw className="h-5 w-5 text-gray-400" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -99,7 +113,6 @@ function TasksPanel() {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [timerTask, setTimerTask] = useState(null);
 
   const dateKey = formatDateKey(currentDate);
   const dateStr = currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -213,7 +226,7 @@ function TasksPanel() {
             {pendingTasks.map(task => (
               <motion.div key={task.id} layout initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                 className="flex items-center gap-3 bg-surface-800/50 rounded-xl px-4 py-3 border border-surface-700/30 group hover:border-surface-700 transition-all cursor-pointer"
-                onClick={() => setTimerTask(task)}>
+                onClick={() => useTimerStore.getState().start(task)}>
                 {isToday ? (
                   <button onClick={e => { e.stopPropagation(); handleToggle(task.id); }}
                     className="shrink-0 text-gray-500 hover:text-green-400 transition-colors">
@@ -241,7 +254,7 @@ function TasksPanel() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={e => { e.stopPropagation(); setTimerTask(task); }}
+                  <button onClick={e => { e.stopPropagation(); useTimerStore.getState().start(task); }}
                     className="p-1.5 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
                     <Clock className="h-3.5 w-3.5" />
                   </button>
@@ -354,9 +367,9 @@ function TasksPanel() {
       </Modal>
 
 
-      {timerTask && <TaskTimerRing task={timerTask} onClose={() => setTimerTask(null)} />}
     </div>
   );
 }
 
 export default TasksPanel;
+export { TaskTimerRing };

@@ -16,6 +16,8 @@ import AnalyticsPanel from '../../features/analytics/AnalyticsPanel';
 import JournalPanel from '../../features/journal/JournalPanel';
 import SettingsModal from '../../features/settings/SettingsModal';
 import { PageLoader } from '../ui/LoadingSpinner';
+import { TaskTimerRing } from '../../features/tasks/TasksPanel';
+import useTimerStore from '../../store/timerStore';
 
 function TrackerLayout() {
   const { user } = useAuthStore();
@@ -262,6 +264,8 @@ function TrackerLayout() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <TaskTimerRing onClose={() => useTimerStore.getState().stop()} />
     </div>
   );
 }
