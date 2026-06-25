@@ -16,6 +16,8 @@ import useTimerStore from '../../store/timerStore';
 
 let audioCtx = null;
 let beepInterval = null;
+let beepOsc = null;
+let beepGain = null;
 
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,31 +48,22 @@ function startFinishBeep() {
   stopFinishBeep();
   try {
     const ctx = getAudioCtx();
-    const playBurst = () => {
-      const now = ctx.currentTime;
-      [0, 0.25, 0.5].forEach((delay) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'square';
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(880, now + delay);
-        gain.gain.setValueAtTime(0.4, now + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.2);
-        osc.start(now + delay);
-        osc.stop(now + delay + 0.22);
-      });
-    };
-    playBurst();
-    beepInterval = setInterval(playBurst, 1800);
+    beepGain = ctx.createGain();
+    beepGain.gain.setValueAtTime(0.35, ctx.currentTime);
+    beepGain.connect(ctx.destination);
+    beepOsc = ctx.createOscillator();
+    beepOsc.type = 'sine';
+    beepOsc.frequency.setValueAtTime(660, ctx.currentTime);
+    beepOsc.connect(beepGain);
+    beepOsc.start(ctx.currentTime);
   } catch {}
 }
 
 function stopFinishBeep() {
-  if (beepInterval) {
-    clearInterval(beepInterval);
-    beepInterval = null;
-  }
+  try {
+    if (beepOsc) { beepOsc.stop(); beepOsc.disconnect(); beepOsc = null; }
+    if (beepGain) { beepGain.disconnect(); beepGain = null; }
+  } catch {}
 }
 
 function TaskTimerRing({ onClose }) {
