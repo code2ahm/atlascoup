@@ -212,7 +212,11 @@ function TasksPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskTime, setNewTaskTime] = useState(25);
+  const [newTaskHrs, setNewTaskHrs] = useState(0);
+  const [newTaskMins, setNewTaskMins] = useState(25);
+  const [newTaskSecs, setNewTaskSecs] = useState(0);
   const [newTaskRepeat, setNewTaskRepeat] = useState(false);
+  const [showCustomTime, setShowCustomTime] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
@@ -240,9 +244,14 @@ function TasksPanel() {
     }
     setAdding(true);
     try {
-      await addTask(user.uid, { name: newTaskName.trim(), timeMin: newTaskTime, repeatDaily: newTaskRepeat }, currentDate);
+      const totalTime = newTaskHrs * 60 + newTaskMins + Math.round(newTaskSecs / 60) || newTaskTime;
+      await addTask(user.uid, { name: newTaskName.trim(), timeMin: Math.max(1, totalTime), repeatDaily: newTaskRepeat }, currentDate);
       setNewTaskName('');
       setNewTaskTime(25);
+      setNewTaskHrs(0);
+      setNewTaskMins(25);
+      setNewTaskSecs(0);
+      setShowCustomTime(false);
       setNewTaskRepeat(false);
       setShowAddModal(false);
       toast.success('Task added!');
@@ -443,18 +452,45 @@ function TasksPanel() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-300">Est. Time</label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {[15, 20, 30, 45, 60, 120].map(m => (
-                <button key={m} type="button" onClick={() => setNewTaskTime(m)}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${newTaskTime === m ? 'bg-primary-500/20 text-primary-400 border-primary-500/30' : 'text-gray-400 border-surface-600 hover:border-surface-500 hover:text-gray-200'}`}>
+                <button key={m} type="button" onClick={() => { setNewTaskTime(m); setShowCustomTime(false); }}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${!showCustomTime && newTaskTime === m ? 'bg-primary-500/20 text-primary-400 border-primary-500/30' : 'text-gray-400 border-surface-600 hover:border-surface-500 hover:text-gray-200'}`}>
                   {m >= 60 ? `${m / 60}h` : `${m}m`}
                 </button>
               ))}
-              <input type="text" inputMode="numeric" value={newTaskTime || ''}
-                onChange={e => { const v = parseInt(e.target.value) || 0; if (v >= 1 && v <= 999) setNewTaskTime(v); }}
-                className="w-14 rounded-lg border border-surface-600 bg-surface-900/50 px-1.5 py-1.5 text-xs text-gray-100 outline-none focus:border-primary-500 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                placeholder="?" />
+              <button type="button" onClick={() => setShowCustomTime(true)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${showCustomTime ? 'bg-primary-500/20 text-primary-400 border-primary-500/30' : 'text-gray-400 border-surface-600 hover:border-surface-500 hover:text-gray-200'}`}>
+                Custom
+              </button>
             </div>
+            {showCustomTime ? (
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1 text-center">Hours</label>
+                  <input type="text" inputMode="numeric" value={newTaskHrs || ''}
+                    onChange={e => setNewTaskHrs(Math.min(99, parseInt(e.target.value) || 0))}
+                    className="w-full rounded-lg border border-surface-600 bg-surface-900/50 px-2 py-2 text-sm text-gray-100 outline-none focus:border-primary-500 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1 text-center">Minutes</label>
+                  <input type="text" inputMode="numeric" value={newTaskMins || ''}
+                    onChange={e => setNewTaskMins(Math.min(59, parseInt(e.target.value) || 0))}
+                    className="w-full rounded-lg border border-surface-600 bg-surface-900/50 px-2 py-2 text-sm text-gray-100 outline-none focus:border-primary-500 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 mb-1 text-center">Seconds</label>
+                  <input type="text" inputMode="numeric" value={newTaskSecs || ''}
+                    onChange={e => setNewTaskSecs(Math.min(59, parseInt(e.target.value) || 0))}
+                    className="w-full rounded-lg border border-surface-600 bg-surface-900/50 px-2 py-2 text-sm text-gray-100 outline-none focus:border-primary-500 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="0" />
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-600 italic">or tap <span className="not-italic text-primary-400">Custom</span> for hrs / mins / secs</p>
+            )}
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer select-none">
