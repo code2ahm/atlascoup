@@ -426,15 +426,13 @@ function Landing() {
     <div className="min-h-screen bg-[#050811] text-white font-quicksand overflow-x-hidden">
       <GradientBackground />
 
-      <div className="fixed top-4 left-0 right-0 z-50 flex justify-center pointer-events-none">
-        <motion.nav
-          animate={{ scale: scrolled ? 0.92 : 1 }}
-          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className={`pointer-events-auto flex items-center justify-between rounded-full transition-all duration-300 ease-out
+      <div className="fixed top-8 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        <nav
+          className={`pointer-events-auto flex items-center justify-between rounded-full transition-all duration-300 ease-out will-change-transform
             ${
               scrolled
-                ? "w-[92%] md:w-[58%] bg-[#0b0f1a]/90 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] py-2 px-4 sm:px-5 border border-white/[0.12]"
-                : "w-[92%] md:w-[78%] lg:w-[72%] bg-[#0b0f1a]/80 backdrop-blur-xl shadow-lg shadow-black/30 py-2.5 px-4 sm:px-6 border border-white/[0.08]"
+                ? "w-[80%] md:w-[52%] bg-[#0b0f1a]/90 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] py-2 px-4 sm:px-5 border border-white/[0.12] scale-[0.92]"
+                : "w-[88%] sm:w-[70%] lg:w-[60%] bg-[#0b0f1a]/80 backdrop-blur-xl shadow-lg shadow-black/30 py-2.5 px-4 sm:px-6 border border-white/[0.08]"
             }`}
         >
           <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -506,7 +504,7 @@ function Landing() {
               />
             </div>
           </button>
-        </motion.nav>
+        </nav>
       </div>
 
       <AnimatePresence>
