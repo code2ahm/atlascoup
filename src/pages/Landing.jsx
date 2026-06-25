@@ -426,33 +426,33 @@ function Landing() {
     <div className="min-h-screen bg-[#050811] text-white font-quicksand overflow-x-hidden">
       <GradientBackground />
 
-      <div className="fixed top-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+      <div className="fixed top-4 left-0 right-0 z-50 flex justify-center pointer-events-none">
         <motion.nav
           animate={{ scale: scrolled ? 0.92 : 1 }}
           transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
           className={`pointer-events-auto flex items-center justify-between rounded-full transition-all duration-300 ease-out
             ${
               scrolled
-                ? "w-[92%] md:w-[58%] bg-[#0b0f1a]/90 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] py-2.5 px-4 sm:px-6 border border-white/[0.12]"
-                : "w-[92%] md:w-[78%] lg:w-[72%] bg-[#0b0f1a]/80 backdrop-blur-xl shadow-lg shadow-black/30 py-3.5 px-5 sm:px-8 border border-white/[0.08]"
+                ? "w-[92%] md:w-[58%] bg-[#0b0f1a]/90 backdrop-blur-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] py-2 px-4 sm:px-5 border border-white/[0.12]"
+                : "w-[92%] md:w-[78%] lg:w-[72%] bg-[#0b0f1a]/80 backdrop-blur-xl shadow-lg shadow-black/30 py-2.5 px-4 sm:px-6 border border-white/[0.08]"
             }`}
         >
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
               src="/favicon.svg"
               alt="Atlas Coup"
-              className={`transition-all duration-300 ${scrolled ? "h-7 w-auto" : "h-9 w-auto"}`}
+              className={`transition-all duration-300 ${scrolled ? "h-6 w-auto" : "h-7 w-auto"}`}
             />
             <span
-              className={`text-white font-semibold transition-all duration-300 ${scrolled ? "text-sm" : "text-base"}`}
+              className={`text-white font-semibold transition-all duration-300 ${scrolled ? "text-xs" : "text-sm"}`}
             >
               Atlas Coup
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center justify-center flex-1 gap-1 px-2">
-            <div className="w-px h-7 bg-white/10" />
-            <div className="flex items-center gap-1">
+          <div className="hidden md:flex items-center justify-center flex-1 gap-1 px-1">
+            <div className="w-px h-5 bg-white/10" />
+            <div className="flex items-center gap-0.5">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
@@ -461,13 +461,13 @@ function Landing() {
                     e.preventDefault();
                     scrollTo(link.href.slice(1));
                   }}
-                  className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:bg-white/5 hover:text-white ${scrolled ? "text-sm" : "text-sm"} text-[#94a3b8]`}
+                  className={`px-2.5 py-1.5 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:bg-white/5 hover:text-white text-xs text-[#94a3b8]`}
                 >
                   {link.label}
                 </a>
               ))}
             </div>
-            <div className="w-px h-7 bg-white/10" />
+            <div className="w-px h-5 bg-white/10" />
           </div>
 
           <div
@@ -476,14 +476,14 @@ function Landing() {
             {user ? (
               <button
                 onClick={() => navigate("/tracker")}
-                className={`whitespace-nowrap rounded-full font-semibold text-white bg-gradient-to-r from-[#4facfe] to-[#2563eb] hover:from-[#3d8ee0] hover:to-[#1d4ed8] shadow-lg shadow-[#4facfe]/20 hover:shadow-[#4facfe]/40 transition-all duration-200 hover:scale-105 ${scrolled ? "px-4 py-1.5 text-xs" : "px-5 py-2 text-sm"}`}
+                className={`whitespace-nowrap rounded-full font-semibold text-white bg-gradient-to-r from-[#4facfe] to-[#2563eb] hover:from-[#3d8ee0] hover:to-[#1d4ed8] shadow-lg shadow-[#4facfe]/20 hover:shadow-[#4facfe]/40 transition-all duration-200 hover:scale-105 ${scrolled ? "px-3 py-1 text-[10px]" : "px-3.5 py-1.5 text-xs"}`}
               >
                 Dashboard
               </button>
             ) : (
               <button
                 onClick={() => navigate("/login")}
-                className={`whitespace-nowrap rounded-full font-semibold text-white bg-gradient-to-r from-[#4facfe] to-[#2563eb] hover:from-[#3d8ee0] hover:to-[#1d4ed8] shadow-lg shadow-[#4facfe]/20 hover:shadow-[#4facfe]/40 transition-all duration-200 hover:scale-105 ${scrolled ? "px-4 py-1.5 text-xs" : "px-5 py-2 text-sm"}`}
+                className={`whitespace-nowrap rounded-full font-semibold text-white bg-gradient-to-r from-[#4facfe] to-[#2563eb] hover:from-[#3d8ee0] hover:to-[#1d4ed8] shadow-lg shadow-[#4facfe]/20 hover:shadow-[#4facfe]/40 transition-all duration-200 hover:scale-105 ${scrolled ? "px-3 py-1 text-[10px]" : "px-3.5 py-1.5 text-xs"}`}
               >
                 Get Started
               </button>
