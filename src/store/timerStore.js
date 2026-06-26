@@ -23,8 +23,8 @@ const useTimerStore = create((set, get) => ({
   },
 
   resume: () => {
-    const { pausedAt } = get();
-    if (!pausedAt) return;
+    const { startedAt, pausedAt, task } = get();
+    if (startedAt && !pausedAt) return;
     set({ startedAt: Date.now(), pausedAt: null });
   },
 
@@ -42,7 +42,7 @@ const useTimerStore = create((set, get) => ({
     const { task } = get();
     if (task) {
       const totalSecs = (task.timeMin || 25) * 60;
-      set({ totalSecs, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false, onComplete: null });
+      set({ totalSecs, startedAt: null, elapsedBeforePause: 0, pausedAt: null, done: false });
     }
   },
 

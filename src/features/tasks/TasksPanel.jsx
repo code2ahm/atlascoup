@@ -13,21 +13,23 @@ import Badge from '../../components/ui/Badge';
 import { LoadingSkeleton } from '../../components/ui/LoadingSpinner';
 
 import useTimerStore from '../../store/timerStore';
+import { Volume2, VolumeX } from 'lucide-react';
 
-let audioCtx = null;
-let beepInterval = null;
-let beepOsc = null;
-let beepGain = null;
-
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
+function formatTime(m) {
+  if (!m || m <= 0) return '';
+  if (m < 1) return `${Math.round(m * 60)}s`;
+  const h = Math.floor(m / 60);
+  const mins = Math.round(m % 60);
+  if (h > 0) return mins > 0 ? `${h}h ${mins}m` : `${h}h`;
+  return `${mins}m`;
 }
+
+let finishAudio = null;
 
 function playStartSound() {
   try {
-    const ctx = getAudioCtx();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
     const now = ctx.currentTime;
     [523.25, 659.25].forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -47,28 +49,27 @@ function playStartSound() {
 function startFinishBeep() {
   stopFinishBeep();
   try {
-    const ctx = getAudioCtx();
-    beepGain = ctx.createGain();
-    beepGain.gain.setValueAtTime(0.35, ctx.currentTime);
-    beepGain.connect(ctx.destination);
-    beepOsc = ctx.createOscillator();
-    beepOsc.type = 'sine';
-    beepOsc.frequency.setValueAtTime(660, ctx.currentTime);
-    beepOsc.connect(beepGain);
-    beepOsc.start(ctx.currentTime);
+    if (!finishAudio) {
+      finishAudio = new Audio('/beep.mp3');
+      finishAudio.loop = true;
+      finishAudio.volume = 0.5;
+    }
+    finishAudio.currentTime = 0;
+    finishAudio.play().catch(() => {});
   } catch {}
 }
 
 function stopFinishBeep() {
-  try {
-    if (beepOsc) { beepOsc.stop(); beepOsc.disconnect(); beepOsc = null; }
-    if (beepGain) { beepGain.disconnect(); beepGain = null; }
-  } catch {}
+  if (finishAudio) {
+    finishAudio.pause();
+    finishAudio.currentTime = 0;
+  }
 }
 
 function TaskTimerRing({ onClose }) {
   const { task, totalSecs, startedAt, pausedAt, done, start, pause, resume, reset, stop, getRemaining } = useTimerStore();
   const [_, forceUpdate] = useState(0);
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('timerSound') !== 'false');
   const timerRef = useRef(null);
   const prevStartedRef = useRef(startedAt);
   const prevDoneRef = useRef(done);
@@ -87,11 +88,15 @@ function TaskTimerRing({ onClose }) {
 
   useEffect(() => {
     if (done && !prevDoneRef.current) {
-      startFinishBeep();
+      if (soundEnabled) startFinishBeep();
     }
     prevDoneRef.current = done;
     return () => { if (done) stopFinishBeep(); };
-  }, [done]);
+  }, [done, soundEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('timerSound', soundEnabled);
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (startedAt && !prevStartedRef.current) playStartSound();
@@ -121,11 +126,17 @@ function TaskTimerRing({ onClose }) {
         <div className="flex items-start justify-between mb-6">
           <div className="flex flex-col min-w-0 flex-1 text-center">
             <p className="text-lg font-semibold text-white/90 truncate">{task.name}</p>
-            {task.timeMin && <span className="text-xs text-gray-500 mt-0.5">{task.timeMin} min</span>}
+            {task.timeMin && <span className="text-xs text-gray-500 mt-0.5">{formatTime(task.timeMin)}</span>}
           </div>
-          <button onClick={handleDismiss} className="p-1 rounded-lg text-gray-500 hover:text-white hover:bg-surface-700/60 transition-all shrink-0">
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={e => { e.stopPropagation(); setSoundEnabled(v => !v); }} title={soundEnabled ? 'Mute alarm' : 'Enable alarm'}
+              className={`p-1.5 rounded-lg transition-all shrink-0 ${soundEnabled ? 'text-gray-400 hover:text-white hover:bg-surface-700/60' : 'text-gray-600 hover:text-gray-400'}`}>
+              {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
+            <button onClick={handleDismiss} className="p-1 rounded-lg text-gray-500 hover:text-white hover:bg-surface-700/60 transition-all shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col items-center gap-5">
@@ -164,14 +175,14 @@ function TaskTimerRing({ onClose }) {
                   className="flex flex-col items-center gap-1">
                   <CheckCircle2 className="h-10 w-10 text-green-400" />
                   <span className="text-3xl font-bold text-green-400 tracking-tight mt-0.5">Done!</span>
-                  <span className="text-xs text-gray-500 mt-1">{task.timeMin || 25} min</span>
+                  <span className="text-xs text-gray-500 mt-1">{formatTime(task.timeMin || 25)}</span>
                 </motion.div>
               ) : (
                 <motion.div key={remaining} className="flex flex-col items-center">
                   <span className={`text-4xl font-bold tabular-nums tracking-tight transition-colors duration-500 ${isLow ? 'text-orange-400' : 'text-white'}`}>
                     {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
                   </span>
-                  <span className="text-xs text-gray-500 mt-1.5">{task.timeMin || 25} min</span>
+                  <span className="text-xs text-gray-500 mt-1.5">{formatTime(task.timeMin || 25)}</span>
                 </motion.div>
               )}
             </div>
@@ -244,8 +255,10 @@ function TasksPanel() {
     }
     setAdding(true);
     try {
-      const totalTime = newTaskHrs * 60 + newTaskMins + Math.round(newTaskSecs / 60) || newTaskTime;
-      await addTask(user.uid, { name: newTaskName.trim(), timeMin: Math.max(1, totalTime), repeatDaily: newTaskRepeat }, currentDate);
+      const totalTime = showCustomTime
+        ? newTaskHrs * 60 + newTaskMins + newTaskSecs / 60
+        : newTaskTime;
+      await addTask(user.uid, { name: newTaskName.trim(), timeMin: Math.max(1 / 60, totalTime), repeatDaily: newTaskRepeat }, currentDate);
       setNewTaskName('');
       setNewTaskTime(25);
       setNewTaskHrs(0);
@@ -367,7 +380,7 @@ function TasksPanel() {
                         {task.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
                         <p className="text-sm text-gray-200 truncate">{task.name}</p>
                       </div>
-                      {task.timeMin && <span className="text-xs text-gray-500 tabular-nums shrink-0">{task.timeMin}m</span>}
+                      {task.timeMin && <span className="text-xs text-gray-500 tabular-nums shrink-0">{formatTime(task.timeMin)}</span>}
                     </>
                   )}
                 </div>
@@ -395,7 +408,7 @@ function TasksPanel() {
                   <CheckCircle2 className="h-5 w-5" />
                 </button>
                 <p className="flex-1 text-sm text-gray-600 line-through truncate">{task.name}</p>
-                {task.timeMin && <span className="text-xs text-gray-700 tabular-nums">{task.timeMin}m</span>}
+                {task.timeMin && <span className="text-xs text-gray-700 tabular-nums">{formatTime(task.timeMin)}</span>}
                 <button onClick={() => handleDelete(task.id)}
                   className="p-1.5 rounded text-gray-600 hover:text-red-400 transition-all">
                   <Trash2 className="h-3.5 w-3.5" />
@@ -437,7 +450,7 @@ function TasksPanel() {
             <div className="border-t-[0.5px] border-surface-700/30 pt-3 flex justify-between">
               <span className="text-gray-400">Est. time</span>
               <span className="text-white font-medium tabular-nums">
-                {tasks.reduce((s, t) => s + (t.timeMin || 0), 0)}m
+                {formatTime(tasks.reduce((s, t) => s + (t.timeMin || 0), 0))}
               </span>
             </div>
           </CardContent>
