@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Pencil, ChevronLeft, ChevronRight, Circle, CheckCircle2, Repeat, Info, TriangleAlert } from 'lucide-react';
+import { Plus, Trash2, Pencil, ChevronLeft, ChevronRight, Circle, CheckCircle2, Repeat, Info, TriangleAlert, GripVertical } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useHabitsStore from '../../store/habitsStore';
 import { getMonthId, formatDateKey } from '../../lib/utils';
@@ -38,6 +38,9 @@ function HabitsPanel() {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const dragRef = useRef(null);
 
   const today = new Date();
   const todayKey = formatDateKey(today);
@@ -108,6 +111,20 @@ function HabitsPanel() {
     }
     setEditingId(null);
   };
+
+  const handleDragStart = (index) => { setDragIndex(index); setDragOverIndex(index); };
+  const handleDragOver = (e, index) => { e.preventDefault(); setDragOverIndex(index); };
+  const handleDrop = () => {
+    if (dragIndex === null || dragOverIndex === null || dragIndex === dragOverIndex) {
+      setDragIndex(null); setDragOverIndex(null); return;
+    }
+    const reordered = [...habits];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dragOverIndex, 0, moved);
+    useHabitsStore.getState().reorderHabits(user.uid, today, reordered.map(h => h.id));
+    setDragIndex(null); setDragOverIndex(null);
+  };
+  const handleDragEnd = () => { setDragIndex(null); setDragOverIndex(null); };
 
   const handleDeleteHabit = async (habitId) => {
     await deleteHabit(user.uid, habitId, today);
@@ -200,10 +217,20 @@ function HabitsPanel() {
               </div>
             ))}
 
-            {habits.map((habit) => (
-              <>
+            {habits.map((habit, idx) => {
+              const isDragOver = dragOverIndex === idx && dragIndex !== idx;
+              return (<>
                 <motion.div key={`${habit.id}-name`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-1 px-1 min-w-0 overflow-hidden group">
+                  draggable={editingId !== habit.id}
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={e => handleDragOver(e, idx)}
+                  onDrop={handleDrop}
+                  onDragEnd={handleDragEnd}
+                  className={`flex items-center gap-1 px-1 min-w-0 overflow-hidden group transition-colors ${isDragOver ? 'bg-primary-500/10 rounded-lg border-t-2 border-primary-500' : dragIndex === idx ? 'opacity-30' : ''}`}>
+                  <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 transition-colors"
+                    onMouseDown={e => e.stopPropagation()}>
+                    <GripVertical className="h-3 w-3" />
+                  </div>
                   {editingId === habit.id ? (
                     <input value={editName} onChange={e => setEditName(e.target.value)}
                       onBlur={() => handleRenameHabit(habit.id)} onKeyDown={e => { if (e.key === 'Enter') handleRenameHabit(habit.id); if (e.key === 'Escape') setEditingId(null); }}
@@ -229,7 +256,12 @@ function HabitsPanel() {
                   const isToday = day.isToday;
                   return (
                     <motion.div key={`${habit.id}-${day.key}`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-center">
+                      draggable={editingId !== habit.id}
+                      onDragStart={() => handleDragStart(idx)}
+                      onDragOver={e => handleDragOver(e, idx)}
+                      onDrop={handleDrop}
+                      onDragEnd={handleDragEnd}
+                      className={`flex justify-center transition-colors ${isDragOver ? 'bg-primary-500/10 rounded-lg border-t-2 border-primary-500' : dragIndex === idx ? 'opacity-30' : ''}`}>
                       <button
                         onClick={() => handleToggleDay(habit.id, day.key)}
                         disabled={!isToday}
@@ -251,17 +283,27 @@ function HabitsPanel() {
                     </motion.div>
                   );
                 })}
-              </>
-            ))}
+              </>);
+            })}
           </div>
 
 
           <div className="sm:hidden space-y-2">
-            {habits.map((habit) => (
+            {habits.map((habit, idx) => {
+              const isDragOver = dragOverIndex === idx && dragIndex !== idx;
+              return (
               <motion.div key={habit.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2">
+                draggable={true}
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={e => handleDragOver(e, idx)}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                className={`bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2 transition-colors ${isDragOver ? 'border-t-2 border-primary-500 ring-1 ring-primary-500/30' : dragIndex === idx ? 'opacity-30' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
+                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 mr-0.5">
+                      <GripVertical className="h-3.5 w-3.5" />
+                    </div>
                     {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
                     <p className="text-sm font-medium text-white truncate">{habit.name}</p>
                   </div>
@@ -306,7 +348,7 @@ function HabitsPanel() {
                   })}
                 </div>
               </motion.div>
-            ))}
+            );})}
           </div>
         </>
       )}

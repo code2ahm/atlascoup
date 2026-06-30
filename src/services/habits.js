@@ -68,6 +68,16 @@ export async function updateHabit(uid, habitId, data, date = new Date()) {
   await updateDoc(ref, data);
 }
 
+export async function batchUpdateOrder(uid, date, updates) {
+  const monthId = getMonthId(date);
+  const batch = [];
+  const colRef = getHabitsCollection(uid, monthId);
+  for (const { id, order } of updates) {
+    batch.push(updateDoc(doc(colRef, id), { order }));
+  }
+  await Promise.all(batch);
+}
+
 export async function deleteHabit(uid, habitId, date = new Date()) {
   const monthId = getMonthId(date);
   const ref = doc(db, 'users', uid, 'habits', monthId, 'items', habitId);

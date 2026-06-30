@@ -68,6 +68,20 @@ const useHabitsStore = create((set, get) => ({
     }));
   },
 
+  reorderHabits: async (uid, date, orderedIds) => {
+    const { habits } = get();
+    const updates = orderedIds.map((id, i) => ({ id, order: i }));
+    await habitsService.batchUpdateOrder(uid, date, updates);
+    set(state => {
+      const updated = state.habits.map(h => {
+        const match = updates.find(u => u.id === h.id);
+        return match ? { ...h, order: match.order } : h;
+      });
+      updated.sort((a, b) => a.order - b.order);
+      return { habits: updated };
+    });
+  },
+
   toggleDay: async (uid, habitId, day, value, date) => {
     await habitsService.toggleHabitDay(uid, habitId, day, value, date);
     set(state => ({
