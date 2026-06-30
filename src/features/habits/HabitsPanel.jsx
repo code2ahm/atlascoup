@@ -240,7 +240,6 @@ function HabitsPanel() {
                       onClick={e => e.stopPropagation()} />
                   ) : (
                     <div className="flex items-center gap-1 min-w-0 flex-1">
-                      {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" title="Repeats monthly" />}
                       <p className="text-sm font-semibold text-gray-200 truncate">{habit.name}</p>
                     </div>
                   )}
@@ -310,7 +309,6 @@ function HabitsPanel() {
                     <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 mr-0.5">
                       <GripVertical className="h-3.5 w-3.5" />
                     </div>
-                    {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" title="Repeats monthly" />}
                     <p className="text-sm font-medium text-white truncate">{habit.name}</p>
                   </div>
                   <button onClick={() => handleDeleteHabit(habit.id)}
