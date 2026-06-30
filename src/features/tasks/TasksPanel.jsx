@@ -46,6 +46,18 @@ function playStartSound() {
   } catch {}
 }
 
+function primeAudio() {
+  try {
+    if (!finishAudio) {
+      finishAudio = new Audio('/beep.mp3');
+      finishAudio.loop = true;
+      finishAudio.volume = 0.5;
+    }
+    finishAudio.volume = 0;
+    finishAudio.play().then(() => { finishAudio.pause(); finishAudio.currentTime = 0; finishAudio.volume = 0.5; }).catch(() => { finishAudio.volume = 0.5; });
+  } catch {}
+}
+
 function startFinishBeep() {
   stopFinishBeep();
   try {
@@ -113,24 +125,29 @@ function TaskTimerRing({ onClose }) {
   const remaining = getRemaining();
   const progress = totalSecs > 0 ? remaining / totalSecs : 0;
   const dashOffset = circumference * (1 - progress);
-  const mins = Math.floor(remaining / 60);
+  const hours = Math.floor(remaining / 3600);
+  const mins = Math.floor((remaining % 3600) / 60);
   const secs = Math.floor(remaining % 60);
   const running = !!startedAt && !pausedAt && !done;
   const isLow = !done && remaining > 0 && progress < 0.2;
 
+  const handlePlayPause = () => {
+    primeAudio();
+    if (running) pause(); else resume();
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md" onClick={handleDismiss}>
-      <div className="bg-surface-900/90 rounded-3xl p-10 border border-surface-700/40 shadow-2xl max-w-sm w-full mx-4 backdrop-blur-xl"
+      <div className="bg-surface-900/90 rounded-3xl p-8 sm:p-10 border border-surface-700/40 shadow-2xl max-w-sm w-full mx-4 backdrop-blur-xl"
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex flex-col min-w-0 flex-1 text-center">
-            <p className="text-lg font-semibold text-white/90 truncate">{task.name}</p>
-            {task.timeMin && <span className="text-xs text-gray-500 mt-0.5">{formatTime(task.timeMin)}</span>}
+        <div className="flex items-center justify-between gap-2 mb-6">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-sm font-semibold text-white/90 truncate">{task.name}</p>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={e => { e.stopPropagation(); setSoundEnabled(v => !v); }} title={soundEnabled ? 'Mute alarm' : 'Enable alarm'}
-              className={`p-1.5 rounded-lg transition-all shrink-0 ${soundEnabled ? 'text-gray-400 hover:text-white hover:bg-surface-700/60' : 'text-gray-600 hover:text-gray-400'}`}>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={e => { e.stopPropagation(); primeAudio(); setSoundEnabled(v => !v); }} title={soundEnabled ? 'Mute alarm' : 'Enable alarm'}
+              className={`p-1.5 rounded-lg transition-all ${soundEnabled ? 'text-gray-400 hover:text-white hover:bg-surface-700/60' : 'text-gray-600 hover:text-gray-400'}`}>
               {soundEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
             </button>
             <button onClick={handleDismiss} className="p-1 rounded-lg text-gray-500 hover:text-white hover:bg-surface-700/60 transition-all shrink-0">
@@ -179,8 +196,8 @@ function TaskTimerRing({ onClose }) {
                 </motion.div>
               ) : (
                 <motion.div key={remaining} className="flex flex-col items-center">
-                  <span className={`text-4xl font-bold tabular-nums tracking-tight transition-colors duration-500 ${isLow ? 'text-orange-400' : 'text-white'}`}>
-                    {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+                  <span className={`text-3xl font-bold tabular-nums tracking-tight transition-colors duration-500 ${isLow ? 'text-orange-400' : 'text-white'}`}>
+                    {hours > 0 ? `${String(hours).padStart(2, '0')}:` : ''}{String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
                   </span>
                   <span className="text-xs text-gray-500 mt-1.5">{formatTime(task.timeMin || 25)}</span>
                 </motion.div>
@@ -197,7 +214,7 @@ function TaskTimerRing({ onClose }) {
               </motion.button>
             ) : (
               <>
-                <motion.button onClick={running ? pause : resume} whileTap={{ scale: 0.9 }}
+                <motion.button onClick={handlePlayPause} whileTap={{ scale: 0.9 }}
                   className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 hover:from-primary-400 hover:to-blue-500 flex items-center justify-center transition-all shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50">
                   {running ? <Pause className="h-6 w-6 text-white" /> : <Play className="h-6 w-6 text-white ml-0.5" />}
                 </motion.button>
