@@ -128,6 +128,28 @@ function HabitsPanel() {
   };
   const handleDragEnd = () => { setDragIndex(null); setDragOverIndex(null); };
 
+  const findTouchIndex = (touch) => {
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = el?.closest('[data-habit-index]');
+    return row ? parseInt(row.dataset.habitIndex) : null;
+  };
+  const handleTouchStart = (e, index) => {
+    e.preventDefault();
+    setDragIndex(index);
+    setDragOverIndex(index);
+  };
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+    const idx = findTouchIndex(e.touches[0]);
+    if (idx !== null && idx !== dragIndex) setDragOverIndex(idx);
+  };
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    const idx = findTouchIndex(e.changedTouches[0]);
+    if (idx !== null) setDragOverIndex(idx);
+    handleDrop();
+  };
+
   const handleDeleteHabit = async (habitId) => {
     await deleteHabit(user.uid, habitId, today);
     toast.success('Habit deleted');
@@ -222,15 +244,18 @@ function HabitsPanel() {
             {habits.map((habit, idx) => {
               const isDragOver = dragOverIndex === idx && dragIndex !== idx;
               return (<>
-                <motion.div key={`${habit.id}-name`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                <motion.div data-habit-index={idx} key={`${habit.id}-name`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                   draggable={editingId !== habit.id}
                   onDragStart={() => handleDragStart(idx)}
                   onDragOver={e => handleDragOver(e, idx)}
                   onDrop={handleDrop}
                   onDragEnd={handleDragEnd}
                   className={`flex items-center gap-1 px-1 min-w-0 overflow-hidden group transition-colors ${isDragOver ? 'bg-primary-500/10 rounded-lg border-t-2 border-primary-500' : dragIndex === idx ? 'opacity-30' : ''}`}>
-                  <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 transition-colors"
-                    onMouseDown={e => e.stopPropagation()}>
+                  <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 transition-colors select-none touch-none"
+                    onMouseDown={e => e.stopPropagation()}
+                    onTouchStart={e => handleTouchStart(e, idx)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}>
                     <GripVertical className="h-3 w-3" />
                   </div>
                   {editingId === habit.id ? (
@@ -258,7 +283,7 @@ function HabitsPanel() {
                   const checked = habit.days?.[day.key] || false;
                   const isToday = day.isToday;
                   return (
-                    <motion.div key={`${habit.id}-${day.key}`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                    <motion.div data-habit-index={idx} key={`${habit.id}-${day.key}`} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                       draggable={editingId !== habit.id}
                       onDragStart={() => handleDragStart(idx)}
                       onDragOver={e => handleDragOver(e, idx)}
@@ -297,7 +322,7 @@ function HabitsPanel() {
             {habits.map((habit, idx) => {
               const isDragOver = dragOverIndex === idx && dragIndex !== idx;
               return (
-              <motion.div key={habit.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div data-habit-index={idx} key={habit.id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 draggable={true}
                 onDragStart={() => handleDragStart(idx)}
                 onDragOver={e => handleDragOver(e, idx)}
@@ -306,7 +331,10 @@ function HabitsPanel() {
                 className={`bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2 transition-colors group ${isDragOver ? 'border-t-2 border-primary-500 ring-1 ring-primary-500/30' : dragIndex === idx ? 'opacity-30' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
-                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 mr-0.5">
+                    <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 mr-0.5 select-none touch-none"
+                      onTouchStart={e => handleTouchStart(e, idx)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}>
                       <GripVertical className="h-3.5 w-3.5" />
                     </div>
                     <p className="text-sm font-medium text-white truncate">{habit.name}</p>
