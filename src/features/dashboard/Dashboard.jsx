@@ -513,10 +513,9 @@ function Dashboard({ onTabChange }) {
     while (d <= today) {
       const key = formatDateKey(d);
       habits.forEach((h) => {
-        if (h.days && key in h.days) {
-          total++;
-          if (h.days[key]) done++;
-        }
+        if (h.createdAt && key < h.createdAt) return;
+        total++;
+        if (h.days && h.days[key]) done++;
       });
       d.setDate(d.getDate() + 1);
     }

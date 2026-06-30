@@ -8,10 +8,12 @@ export function calculateHealthScore(habits, startDate, endDate) {
   const midDate = new Date(startDate.getTime() + (endDate - startDate) / 2);
 
   habits.forEach(habit => {
-    let completedDays = 0, streak = 0, maxStreak = 0;
+    let completedDays = 0, streak = 0, maxStreak = 0, applicableDays = 0;
     let currentDate = new Date(startDate);
     while (currentDate <= endDate) {
       const key = formatDateKey(currentDate);
+      if (habit.createdAt && key < habit.createdAt) { currentDate.setDate(currentDate.getDate() + 1); continue; }
+      applicableDays++;
       if (habit.days && habit.days[key]) {
         completedDays++;
         streak++;
@@ -23,19 +25,21 @@ export function calculateHealthScore(habits, startDate, endDate) {
       }
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    const ratio = totalDays > 0 ? completedDays / totalDays : 0;
-    consistencySum += ratio;
-    streakSum += maxStreak;
+    const totalForHabit = applicableDays || totalDays;
     firstHalfTotal += Math.ceil((midDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
     secondHalfTotal += Math.ceil((endDate - midDate) / (1000 * 60 * 60 * 24));
+    const ratio = totalForHabit > 0 ? completedDays / totalForHabit : 0;
+    consistencySum += ratio;
+    streakSum += maxStreak;
   });
 
-  // Count perfect days — days where all habits were completed
+  // Count perfect days — days where all applicable habits were completed
   let perfectDays = 0;
   let currentDate = new Date(startDate);
   while (currentDate <= endDate) {
     const key = formatDateKey(currentDate);
-    if (habits.every(h => h.days && h.days[key])) perfectDays++;
+    const applicable = habits.filter(h => !h.createdAt || key >= h.createdAt);
+    if (applicable.length > 0 && applicable.every(h => h.days && h.days[key])) perfectDays++;
     currentDate.setDate(currentDate.getDate() + 1);
   }
 
@@ -66,6 +70,7 @@ export function calculateStreaks(habits, startDate, endDate) {
     d.setDate(d.getDate() - 1);
     while (d >= startDate) {
       const key = formatDateKey(d);
+      if (habit.createdAt && key < habit.createdAt) { d.setDate(d.getDate() - 1); continue; }
       if (habit.days && key in habit.days) {
         if (habit.days[key]) streak++;
         else break;
@@ -82,6 +87,7 @@ export function calculateStreaks(habits, startDate, endDate) {
     let d = new Date(startDate);
     while (d <= endDate) {
       const key = formatDateKey(d);
+      if (habit.createdAt && key < habit.createdAt) { d.setDate(d.getDate() + 1); continue; }
       if (habit.days && habit.days[key]) {
         streak++;
         maxStreak = Math.max(maxStreak, streak);

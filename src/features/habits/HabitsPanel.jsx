@@ -240,18 +240,20 @@ function HabitsPanel() {
                       onClick={e => e.stopPropagation()} />
                   ) : (
                     <div className="flex items-center gap-1 min-w-0 flex-1">
-                      {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
+                      {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" title="Repeats monthly" />}
                       <p className="text-sm font-semibold text-gray-200 truncate">{habit.name}</p>
                     </div>
                   )}
-                  <button onClick={() => { setEditingId(habit.id); setEditName(habit.name); }}
-                    className="shrink-0 p-0.5 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
-                    <Pencil className="h-2.5 w-2.5" />
-                  </button>
-                  <button onClick={() => handleDeleteHabit(habit.id)}
-                    className="shrink-0 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </button>
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditingId(habit.id); setEditName(habit.name); }}
+                      className="shrink-0 p-0.5 rounded text-gray-500 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
+                      <Pencil className="h-2.5 w-2.5" />
+                    </button>
+                    <button onClick={() => handleDeleteHabit(habit.id)}
+                      className="shrink-0 p-0.5 rounded text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                 </motion.div>
                 {weekDays.map(day => {
                   const checked = habit.days?.[day.key] || false;
@@ -302,17 +304,17 @@ function HabitsPanel() {
                 onDragOver={e => handleDragOver(e, idx)}
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
-                className={`bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2 transition-colors ${isDragOver ? 'border-t-2 border-primary-500 ring-1 ring-primary-500/30' : dragIndex === idx ? 'opacity-30' : ''}`}>
+                className={`bg-surface-800/60 border border-surface-700/40 rounded-xl p-3 space-y-2 transition-colors group ${isDragOver ? 'border-t-2 border-primary-500 ring-1 ring-primary-500/30' : dragIndex === idx ? 'opacity-30' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
                     <div className="shrink-0 cursor-grab active:cursor-grabbing text-gray-600 mr-0.5">
                       <GripVertical className="h-3.5 w-3.5" />
                     </div>
-                    {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" />}
+                    {habit.repeatDaily && <Repeat className="h-3 w-3 text-gray-600 shrink-0" title="Repeats monthly" />}
                     <p className="text-sm font-medium text-white truncate">{habit.name}</p>
                   </div>
                   <button onClick={() => handleDeleteHabit(habit.id)}
-                    className="shrink-0 p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                    className="shrink-0 p-1 rounded-lg text-gray-500 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
