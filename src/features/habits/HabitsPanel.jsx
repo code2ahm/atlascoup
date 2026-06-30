@@ -62,11 +62,13 @@ function HabitsPanel() {
     const days = [];
     const cur = new Date(weekStart);
     while (cur <= weekEnd) {
+      const key = formatDateKey(cur);
       days.push({
         date: new Date(cur),
-        key: formatDateKey(cur),
+        key,
         dayNum: cur.getDate(),
-        isToday: formatDateKey(cur) === todayKey,
+        isToday: key === todayKey,
+        isPast: key < todayKey,
         month: cur.toLocaleString('default', { month: 'short' }),
       });
       cur.setDate(cur.getDate() + 1);
@@ -272,12 +274,14 @@ function HabitsPanel() {
                               ? 'bg-primary-500/20 text-primary-400/70'
                               : isToday
                                 ? 'bg-surface-800 border border-dashed border-primary-500/40 hover:bg-surface-700 hover:border-primary-500/60'
-                                : 'bg-surface-800 cursor-not-allowed opacity-60'
+                                : !checked && day.isPast
+                                  ? 'bg-red-950/30 border border-red-900/30 cursor-not-allowed'
+                                  : 'bg-surface-800 cursor-not-allowed opacity-60'
                           }`}
                       >
                         {checked
                           ? <CheckCircle2 className={`h-3 w-3 ${isToday ? '' : 'text-primary-400/60'}`} />
-                          : <Circle className={`h-3 w-3 ${isToday ? 'text-primary-500/30' : 'text-gray-700'}`} />
+                          : <Circle className={`h-3 w-3 ${isToday ? 'text-primary-500/30' : day.isPast ? 'text-red-400/40' : 'text-gray-700'}`} />
                         }
                       </button>
                     </motion.div>
@@ -332,12 +336,14 @@ function HabitsPanel() {
                                 ? 'bg-primary-500/20 text-primary-400/70'
                                 : isToday
                                   ? 'bg-surface-700 border border-dashed border-primary-500/40'
-                                  : 'bg-surface-700 cursor-not-allowed opacity-60'
+                                  : !checked && day.isPast
+                                    ? 'bg-red-950/30 border border-red-900/30 cursor-not-allowed'
+                                    : 'bg-surface-700 cursor-not-allowed opacity-60'
                             }`}
                         >
                           {checked
                             ? <CheckCircle2 className={`h-3 w-3 ${isToday ? '' : 'text-primary-400/60'}`} />
-                            : <Circle className={`h-3 w-3 ${isToday ? 'text-primary-500/40' : 'text-gray-700'}`} />
+                            : <Circle className={`h-3 w-3 ${isToday ? 'text-primary-500/40' : day.isPast ? 'text-red-400/40' : 'text-gray-700'}`} />
                           }
                         </button>
                         {isToday && (
