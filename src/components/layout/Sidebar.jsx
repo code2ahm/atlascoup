@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { LayoutDashboard, CheckSquare, ListTodo, Target, BarChart3, BookOpen, Settings, LogOut, Sun, Moon, Download, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import useThemeStore from '../../store/themeStore';
@@ -13,12 +14,16 @@ const navItems = [
 
 function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, onInstall, showInstall, userName, userEmail, userPhoto, collapsed, onToggleCollapse }) {
   const { theme } = useThemeStore();
+  const [hovered, setHovered] = useState(false);
+  const expanded = !collapsed || hovered;
 
   return (
     <aside
+      onMouseEnter={() => collapsed && setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={cn(
         'hidden lg:flex flex-col h-screen bg-surface-850 border-r border-surface-700/50 shrink-0 transition-all duration-300',
-        collapsed ? 'w-16' : 'w-60'
+        expanded ? 'w-60' : 'w-16'
       )}
     >
       <div className="flex flex-col h-full overflow-hidden">
@@ -30,7 +35,7 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, 
               {userName ? userName.charAt(0).toUpperCase() : 'U'}
             </div>
           )}
-          {!collapsed && (
+          {expanded && (
             <div className="flex-1 min-w-0 ml-3">
               <p className="text-sm font-medium text-white truncate">{userName || 'User'}</p>
               <p className="text-xs text-gray-500 truncate">{userEmail || ''}</p>
@@ -46,17 +51,17 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, 
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                title={collapsed ? item.label : undefined}
+                title={!expanded ? item.label : undefined}
                 className={cn(
                   'w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200',
-                  collapsed ? 'px-0' : '',
+                  !expanded ? 'px-0' : '',
                   isActive
                     ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                     : 'text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 border border-transparent'
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && (
+                {expanded && (
                   <>
                     <span className="flex-1 text-left">{item.label}</span>
                     {isActive && <div className="w-1 h-1 rounded-full bg-primary-500" />}
@@ -71,33 +76,33 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, 
           <div className="relative group">
             <button
               onClick={onSettings}
-              title={collapsed ? 'Settings' : undefined}
+              title={!expanded ? 'Settings' : undefined}
               className="w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
             >
               <Settings className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="flex-1 text-left">Settings</span>}
+              {expanded && <span className="flex-1 text-left">Settings</span>}
             </button>
           </div>
           {showInstall && (
             <button
               onClick={onInstall}
-              title={collapsed ? 'Install App' : undefined}
+              title={!expanded ? 'Install App' : undefined}
               className="w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
             >
               <Download className="h-4 w-4 shrink-0" />
-              {!collapsed && <span className="flex-1 text-left">Install App</span>}
+              {expanded && <span className="flex-1 text-left">Install App</span>}
             </button>
           )}
           <div className="relative group">
             <button
               onClick={onToggleTheme}
-              title={collapsed ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
+              title={!expanded ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : undefined}
               className="w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
-              {!collapsed && <span className="flex-1 text-left">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+              {expanded && <span className="flex-1 text-left">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
             </button>
-            {theme === 'light' && !collapsed && (
+            {theme === 'light' && expanded && !hovered && (
               <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover:block z-50 pointer-events-none">
                 <div className="bg-surface-800 text-[11px] text-gray-200 px-2.5 py-1.5 rounded-lg border border-white/10 shadow-xl whitespace-nowrap">
                   Yes! click me, enable the dark mode
@@ -107,19 +112,19 @@ function Sidebar({ activeTab, onTabChange, onLogout, onSettings, onToggleTheme, 
           </div>
           <button
             onClick={onLogout}
-            title={collapsed ? 'Logout' : undefined}
+            title={!expanded ? 'Logout' : undefined}
             className="w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all"
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span className="flex-1 text-left">Logout</span>}
+            {expanded && <span className="flex-1 text-left">Logout</span>}
           </button>
           <button
             onClick={onToggleCollapse}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
             className="w-full flex items-center justify-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-surface-700/50 transition-all"
           >
-            {collapsed ? <PanelLeft className="h-4 w-4 shrink-0" /> : <PanelLeftClose className="h-4 w-4 shrink-0" />}
-            {!collapsed && <span className="flex-1 text-left">Collapse</span>}
+            {expanded ? <PanelLeftClose className="h-4 w-4 shrink-0" /> : <PanelLeft className="h-4 w-4 shrink-0" />}
+            {expanded && <span className="flex-1 text-left">Collapse</span>}
           </button>
         </div>
       </div>
